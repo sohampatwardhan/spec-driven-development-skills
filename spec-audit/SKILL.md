@@ -42,18 +42,12 @@ evidence.
    missing/stale artifact navigation, broken local links, or unlinked references to existing
    project paths as human-usability findings that must be corrected before a passed audit.
 3. **Verify JSON-sidecar freshness and consistency.** For whichever of `02_requirements.json`,
-   `04_tasks.json`, and `05_execution.json` exist for the audited feature, confirm each was
-   regenerated alongside its Markdown source rather than hand-edited or left behind after a
-   revision — once the "whenever the Markdown updates, the JSON updates too" rule applies to a
-   sidecar, a stale or missing one is a CERTAIN finding, the same severity class as a broken
-   navigation link, not a stylistic nit. When a sidecar exists, spot-check a sample of its
-   structured fields directly against the Markdown's authoritative state instead of only trusting
-   rendered prose — e.g. diff `04_tasks.json`'s `concurrency.ready`/`parallel_candidates` against
-   the checklist's checkbox and `Depends on` state, or `02_requirements.json`'s
-   `requirements[].criteria[]` against the numbered `**R<n>.<m>**` EARS criteria — this is
-   strictly easier for a reviewer than re-deriving the dependency graph or criterion set from
-   Markdown regex by hand, and it is required wherever the sidecar exists, not only when a
-   Technical/factual reviewer happens to notice a discrepancy.
+   `03_design.json`, `04_tasks.json`, and `05_execution.json` exist for the audited feature (in `sidecars/`
+   or root), confirm each was regenerated alongside its Markdown source rather than hand-edited or left
+   behind after a revision. Spot-check structured fields directly against Markdown authoritative state.
+   When completing an audit, emit a structured `sidecars/audit_findings.json` artifact conforming to
+   [`spec-driven/contracts/schemas/audit_findings.schema.json`](../spec-driven/contracts/schemas/audit_findings.schema.json)
+   classifying all findings by severity (P0/P1/P2) and certainty (CERTAIN/UNCERTAIN).
 4. **Establish the audit boundary.** Confirm that requirements preserve the approved problem,
    scope, non-goals, and chosen approach, then list the requirement criteria, design
    correctness properties, task leaves, proposed changed files, and checkpoints.

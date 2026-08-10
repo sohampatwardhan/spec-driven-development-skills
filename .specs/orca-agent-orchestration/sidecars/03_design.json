@@ -1,0 +1,253 @@
+{
+  "schema_version": 1,
+  "generated_from": {
+    "file": "03_design.md",
+    "sha256": "c211247944a12396017c11290e10523fc4963aff394c5cf6de0e0d382d1a0902"
+  },
+  "architecture": {
+    "components": [
+      {
+        "id": "orca_bridge",
+        "name": "Orca Task Bridge (scripts/spec-orca.py)",
+        "responsibility": "Translates 04_tasks.json into Orca Runs, Task DAGs with prerequisite bindings (--deps), parent-child hierarchies (--parent), and Checkpoint decision gates (gate-create).",
+        "interfaces": [
+          "sync(spec_dir, run_id)",
+          "status(spec_dir)",
+          "dispatch_ready(spec_dir)"
+        ],
+        "files": [
+          "spec-driven/scripts/spec-orca.py"
+        ]
+      },
+      {
+        "id": "agent_profile_registry",
+        "name": "Agent CLI Profile Registry",
+        "responsibility": "Loads contracts/agent_profiles.json and provides canonical unattended execution flags, model flags, and reasoning effort flags for Claude, Codex, Antigravity, Cursor, and OpenCode.",
+        "interfaces": [
+          "get_agent_cmd(agent, role, model, effort, custom_flags)"
+        ],
+        "files": [
+          "spec-driven/contracts/agent_profiles.json",
+          "spec-driven/contracts/spec-family.yaml"
+        ]
+      },
+      {
+        "id": "wave_scheduler",
+        "name": "Guarded Wave Scheduler",
+        "responsibility": "Dispatches parallel-safe tasks into isolated child worktrees (--worktree new-child --setup run) and sequential subagents into the current worktree, binding them to Orca tasks.",
+        "interfaces": [
+          "dispatch_wave(wave_id, tasks, run_id)"
+        ],
+        "files": [
+          "spec-execute/SKILL.md"
+        ]
+      },
+      {
+        "id": "supervisor_event_loop",
+        "name": "Supervised Worker Event Loop",
+        "responsibility": "Supervises active workers via orca check --wait, handles questions (ask/reply), captures worker_done completion payloads, and releases settled terminals.",
+        "interfaces": [
+          "supervise(run_id, timeout_ms)",
+          "handle_worker_done(msg)"
+        ],
+        "files": [
+          "spec-execute/SKILL.md",
+          "spec-audit/SKILL.md"
+        ]
+      },
+      {
+        "id": "gantt_engine",
+        "name": "Deterministic Gantt Generator (scripts/render-gantt.py)",
+        "responsibility": "Reads 05_execution.json / 04_tasks.json timing intervals and deterministically generates, validates, and injects syntax-error-free Mermaid gantt charts into 05_execution.md.",
+        "interfaces": [
+          "render_gantt_from_execution(execution_json_path, output_md_path)"
+        ],
+        "files": [
+          "spec-driven/scripts/render-gantt.py"
+        ]
+      },
+      {
+        "id": "sidecar_validator",
+        "name": "Comprehensive Sidecar Validator",
+        "responsibility": "Validates 00_state.json, 01_discovery.json, 02_requirements.json, 03_design.json, 04_tasks.json, 05_execution.json, and audit_findings.json against JSON schemas and performs 3-way traceability checks.",
+        "interfaces": [
+          "validate_sidecars(spec_dir)",
+          "check_traceability(spec_dir)"
+        ],
+        "files": [
+          "spec-driven/scripts/spec-check.py"
+        ]
+      },
+      {
+        "id": "budget_and_quota_inspector",
+        "name": "Budget & Quota Inspector",
+        "responsibility": "Inspects available token/credit quotas, provider usage limits, or rate limit tiers, dynamically down-tiering non-critical tasks or deferring execution during cooldowns.",
+        "interfaces": [
+          "check_budget_and_quota(provider)",
+          "get_fallback_model(category, current_tier)"
+        ],
+        "files": [
+          "spec-driven/scripts/model-router.py",
+          "spec-driven/scripts/spec-orca.py"
+        ]
+      }
+    ],
+    "data_models": [
+      {
+        "name": "OrcaDispatchEnvelope",
+        "fields": {
+          "task_id": "string",
+          "orca_task_id": "string",
+          "worktree_mode": "new-child | current | none",
+          "agent": "string",
+          "unattended_flags": "list[string]",
+          "model": "string",
+          "effort": "string",
+          "brief_path": "string"
+        }
+      },
+      {
+        "name": "WorkerDonePayload",
+        "fields": {
+          "status": "pass | fail | blocked | uncertain",
+          "task_id": "string",
+          "changed_files": "list[string]",
+          "criteria": "list[{id: string, result: pass|fail, evidence: string}]",
+          "verification": "{commands: list[string], exits: list[int]}",
+          "findings": "list[string]"
+        }
+      }
+    ]
+  },
+  "correctness_properties": [
+    {
+      "id": "P1",
+      "description": "The spec-family contract and agent_profiles.json define canonical unattended flags and model/effort mappings for all supported agents.",
+      "validates_requirements": [
+        "1.1",
+        "1.2",
+        "1.3",
+        "1.4",
+        "1.5"
+      ]
+    },
+    {
+      "id": "P2",
+      "description": "The spec-orca.py bridge script accurately translates 04_tasks.json dependencies, parents, and checkpoints into Orca tasks and decision gates.",
+      "validates_requirements": [
+        "2.1",
+        "2.2",
+        "2.3",
+        "2.4",
+        "2.5"
+      ]
+    },
+    {
+      "id": "P3",
+      "description": "Worker placement isolates parallel-safe tasks in child worktrees with --setup run, while sequential subagents run in the current worktree, respecting model and reasoning levels.",
+      "validates_requirements": [
+        "3.1",
+        "3.2",
+        "3.3",
+        "3.4"
+      ]
+    },
+    {
+      "id": "P4",
+      "description": "The coordinator supervises workers via check --wait, handles questions and heartbeats, verifies structured worker_done returns, and safely releases settled terminals.",
+      "validates_requirements": [
+        "4.1",
+        "4.2",
+        "4.3",
+        "4.4",
+        "4.5"
+      ]
+    },
+    {
+      "id": "P5",
+      "description": "spec-audit resolves reviewer fan-out via fanout.py, dispatches parallel reviewer terminals, and merges structured review_verdict payloads into CERTAIN/UNCERTAIN findings.",
+      "validates_requirements": [
+        "5.1",
+        "5.2",
+        "5.3"
+      ]
+    },
+    {
+      "id": "P6",
+      "description": "Execution timing from Orca telemetry syncs to 05_execution.md/05_execution.json, while non-Orca environments fall back gracefully to local sequential execution.",
+      "validates_requirements": [
+        "6.1",
+        "6.2",
+        "6.3"
+      ]
+    },
+    {
+      "id": "P7",
+      "description": "All spec phases generate and validate JSON sidecars, supporting 3-way in-memory traceability validation among requirements, design, and tasks.",
+      "validates_requirements": [
+        "7.1",
+        "7.2",
+        "7.3",
+        "7.4",
+        "7.5"
+      ]
+    },
+    {
+      "id": "P8",
+      "description": "Formal JSON Schemas in contracts/schemas/ enforce sidecar validity, and sidecars reside cleanly in the dedicated .specs/<slug>/sidecars/ directory.",
+      "validates_requirements": [
+        "8.1",
+        "8.2",
+        "8.3"
+      ]
+    },
+    {
+      "id": "P9",
+      "description": "The Gantt generator script deterministically derives, validates, and injects syntax-error-free Mermaid gantt charts into 05_execution.md on schedule updates.",
+      "validates_requirements": [
+        "9.1",
+        "9.2",
+        "9.3"
+      ]
+    },
+    {
+      "id": "P10",
+      "description": "The model-router.py and spec-orca.py scripts inspect available credits and provider quotas, dynamically down-tiering non-critical tasks to economical models or deferring execution when rate limits or quotas are exhausted.",
+      "validates_requirements": [
+        "10.1",
+        "10.2",
+        "10.3"
+      ]
+    }
+  ],
+  "current_technology_evidence": [
+    {
+      "technology": "Orca Orchestration CLI & RPC Daemon",
+      "source": "orca binary (/opt/homebrew/bin/orca)",
+      "selected_version": "current (Orca 2.0+)",
+      "query": "orchestration run-create, task-create, worker-start, check --wait, gate-create",
+      "decision": "Use Orca orchestration CLI as the primary multi-agent orchestration runtime, leveraging child worktrees, PTY management, and inter-agent mail."
+    },
+    {
+      "technology": "Claude Code CLI",
+      "source": "Anthropic Claude Code",
+      "selected_version": "current",
+      "query": "--dangerously-skip-permissions, --model, --effort",
+      "decision": "Pass --dangerously-skip-permissions for implementers to eliminate interactive prompt freezes in unattended PTY sessions."
+    },
+    {
+      "technology": "OpenAI Codex CLI",
+      "source": "OpenAI Codex",
+      "selected_version": "current",
+      "query": "--full-auto, -c model_reasoning_effort=",
+      "decision": "Pass --full-auto and -c model_reasoning_effort= to automate tool approvals and control reasoning budget."
+    }
+  ],
+  "dependency_security_evidence": [
+    {
+      "dependency": "jsonschema",
+      "trigger_mode": "none",
+      "result": "Standard Python standard-library / optional jsonschema package; no external network runtime required."
+    }
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "generated_from": {
+    "file": "01_discovery.md",
+    "sha256": "adcbf77b4a56f494cb706294bba6a0cb5f8e0ab14667e8398c6e044e0a91ab21"
+  },
+  "feature": "orca-agent-orchestration",
+  "title": "Orca Multi-Agent Task Orchestration",
+  "status": "approved",
+  "approved_date": "2026-08-10",
+  "problem": "Single-thread context exhaustion, interactive terminal halts during background subagent execution, and manual worktree/PTY management.",
+  "outcome": "Native, zero-disruption task orchestration powered by the Orca runtime daemon with deterministic DAG dispatch, unattended agent CLI flag profiles, isolated child worktree workers, structured inter-agent messaging, checkpoint decision gates, and full JSON sidecar traceability.",
+  "scope": {
+    "in_scope": [
+      "Orca runtime adapter contract in spec-family.yaml",
+      "Canonical agent CLI flag profiles across major tools (Claude, Codex, Antigravity, Cursor, OpenCode)",
+      "Orca orchestration and Agent CLI reference documentation",
+      "Skill upgrades for spec-execute, spec-audit, spec-tasks, and spec-finish",
+      "Deterministic Python bridge utility (scripts/spec-orca.py)",
+      "Comprehensive JSON sidecar ecosystem across all spec phases (00-05)",
+      "Graceful fallback to local sequential execution"
+    ],
+    "non_goals": [
+      "Altering core Markdown EARS criteria syntax",
+      "Making Orca a mandatory dependency for all environments",
+      "Reinventing a custom PTY background daemon"
+    ]
+  },
+  "approaches": [
+    {
+      "name": "Native Orca Integration with Agent CLI Profiles, Sidecar Ecosystem, & Python Bridge",
+      "benefits": "Zero-disruption unattended execution, native DAG coordination, worktree isolation, full JSON sidecar validation, durable recovery.",
+      "costs_risks": "Requires maintaining cross-agent CLI flag profiles.",
+      "reversibility": "High",
+      "decision": "accepted"
+    },
+    {
+      "name": "Prose-Only Skill Updates",
+      "benefits": "Minimal initial code.",
+      "costs_risks": "High disruption risk and manual command typos.",
+      "reversibility": "High",
+      "decision": "rejected"
+    },
+    {
+      "name": "Custom Background Process Manager",
+      "benefits": "No Orca dependency.",
+      "costs_risks": "Massive maintenance burden reinventing PTYs and worktrees.",
+      "reversibility": "Low",
+      "decision": "rejected"
+    }
+  ],
+  "chosen_direction": {
+    "approach": "Native Orca Integration with Agent CLI Profiles, Sidecar Ecosystem, & Python Bridge",
+    "architecture": "Coordinator (spec-execute) -> spec-orca.py -> Orca Daemon -> Isolated Child Worktree Workers (Unattended CLI Flags) -> Structured worker_done / decision gates -> 05_execution.json sync"
+  }
+}

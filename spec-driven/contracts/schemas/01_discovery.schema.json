@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://specs.agentskills.io/schemas/01_discovery.schema.json",
+  "title": "SpecDiscoverySidecar",
+  "description": "Schema for 01_discovery.json problem boundary and approaches sidecar",
+  "type": "object",
+  "required": ["schema_version", "generated_from", "feature", "title", "problem", "outcome", "scope", "approaches", "chosen_direction"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "generated_from": {
+      "type": "object",
+      "required": ["file", "sha256"],
+      "properties": {
+        "file": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "feature": { "type": "string" },
+    "title": { "type": "string" },
+    "status": { "type": "string", "enum": ["draft", "approved", "invalidated"] },
+    "approved_date": { "type": ["string", "null"] },
+    "problem": { "type": "string" },
+    "outcome": { "type": "string" },
+    "scope": {
+      "type": "object",
+      "required": ["in_scope", "non_goals"],
+      "properties": {
+        "in_scope": { "type": "array", "items": { "type": "string" } },
+        "non_goals": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "approaches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "benefits", "costs_risks", "decision"],
+        "properties": {
+          "name": { "type": "string" },
+          "benefits": { "type": "string" },
+          "costs_risks": { "type": "string" },
+          "reversibility": { "type": "string" },
+          "decision": { "type": "string", "enum": ["accepted", "rejected"] }
+        }
+      }
+    },
+    "chosen_direction": {
+      "type": "object",
+      "required": ["approach"],
+      "properties": {
+        "approach": { "type": "string" },
+        "architecture": { "type": "string" }
+      }
+    }
+  }
+}

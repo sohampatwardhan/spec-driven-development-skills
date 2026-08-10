@@ -31,9 +31,16 @@ numbered requirement.
 
 - **`scripts/spec-check.py`** validates every numbered artifact: EARS grammar, requirement ↔
   design-property ↔ task traceability, task dependency graphs (stages, cycles, parallel-safety),
-  navigation, and dependency-security evidence — and emits three generated, hash-verified JSON
-  sidecars (`00_state.json`, `04_tasks.json`, `05_execution.json`) so a computer never has to
-  regex the Markdown to know what's approved, what's ready to run, or what's blocked.
+  navigation, and dependency-security evidence — with 9 formal JSON schemas in `contracts/schemas/`
+  and generated, hash-verified JSON sidecars under `.specs/<slug>/sidecars/` (`00_state.json`,
+  `01_discovery.json`, `02_requirements.json`, `03_design.json`, `04_tasks.json`, `05_execution.json`,
+  `audit_findings.json`, `orca_run.json`).
+- **`scripts/spec-orca.py`** coordinates multi-agent task execution via Orca runs, managing DAG
+  prerequisites (`--deps`), parent-child hierarchies (`--parent`), decision gates (`gate-create`),
+  child worktree placement (`--worktree new-child`), unattended CLI flags from `contracts/agent_profiles.json`,
+  and budget/quota-aware dynamic down-tiering.
+- **`scripts/render-gantt.py`** deterministically parses execution timing to render syntax-error-free
+  Mermaid Gantt charts in `05_execution.md` and color-coded flowcharts (grey/red/amber/green) in `04_tasks.md`.
 - **`scripts/model-router.py`** and **`scripts/fanout.py`** resolve *which model* (capability
   tier: `economical`/`balanced`/`frontier`) and *how much reasoning* (`low`/`medium`/`high`/
   `extra_high`) a delegated subagent gets — two independent axes, resolved deterministically from

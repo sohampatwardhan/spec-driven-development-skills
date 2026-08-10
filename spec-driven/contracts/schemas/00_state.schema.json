@@ -1,0 +1,77 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://specs.agentskills.io/schemas/00_state.schema.json",
+  "title": "SpecStateSidecar",
+  "description": "Schema for 00_state.json phase-gate tracking sidecar",
+  "type": "object",
+  "required": ["schema_version", "generated_from", "gates"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "generated_from": {
+      "type": "object",
+      "required": ["file", "sha256"],
+      "properties": {
+        "file": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "gates": {
+      "type": "object",
+      "required": ["discovery", "requirements", "design", "tasks", "audit", "execution"],
+      "properties": {
+        "discovery": {
+          "type": "object",
+          "required": ["status", "evidence"],
+          "properties": {
+            "status": { "type": "string", "enum": ["draft", "approved", "invalidated"] },
+            "evidence": { "type": "string" }
+          }
+        },
+        "requirements": {
+          "type": "object",
+          "required": ["status", "evidence"],
+          "properties": {
+            "status": { "type": "string", "enum": ["not_started", "draft", "approved", "invalidated"] },
+            "evidence": { "type": "string" }
+          }
+        },
+        "design": {
+          "type": "object",
+          "required": ["status", "evidence"],
+          "properties": {
+            "status": { "type": "string", "enum": ["not_started", "draft", "approved", "invalidated"] },
+            "evidence": { "type": "string" }
+          }
+        },
+        "tasks": {
+          "type": "object",
+          "required": ["status", "evidence"],
+          "properties": {
+            "status": { "type": "string", "enum": ["not_started", "draft", "approved", "invalidated"] },
+            "evidence": { "type": "string" }
+          }
+        },
+        "audit": {
+          "type": "object",
+          "required": ["status", "evidence"],
+          "properties": {
+            "status": { "type": "string", "enum": ["not_run", "passed", "findings_open", "fixes_applied"] },
+            "evidence": { "type": "string" }
+          }
+        },
+        "execution": {
+          "type": "object",
+          "required": ["status", "evidence"],
+          "properties": {
+            "status": { "type": "string", "enum": ["not_started", "in_progress", "blocked", "complete"] },
+            "evidence": { "type": "string" }
+          }
+        }
+      }
+    },
+    "change_control": {
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

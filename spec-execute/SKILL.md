@@ -317,10 +317,24 @@ Before each wave:
    shared checkout.
 4. Limit the wave to available agent capacity. Keep serial/controller tasks out of the wave.
 
-The controller retains ownership of the main worktree, `04_tasks.md`, approval gates, integration,
-and checklist state. An implementer may commit only its task branch, edit only its declared files
-and task-local evidence, and must not check off the task or continue past a checkpoint. Reviewers
-operate against that task's isolated diff.
+### Orca Multi-Agent Orchestration and Wave Dispatch
+
+When executing with Orca (`orca orchestration`), use [`spec-driven/scripts/spec-orca.py`](../spec-driven/scripts/spec-orca.py) to manage the Run DAG, child worktrees, and unattended agent launches:
+
+1. **Initialize Orca Run**:
+   Run `python3 spec-driven/scripts/spec-orca.py sync .specs/<feature-slug>` to register the task DAG, prerequisite bindings (`--deps`), parent-child hierarchies (`--parent`), and checkpoint decision gates (`gate-create`).
+2. **Quota & Budget Preflight**:
+   Run `python3 spec-driven/scripts/spec-orca.py budget` to inspect credit and provider rate limits. If constrained, the engine automatically down-tiers non-critical tasks to economical models; if exhausted, it pauses execution and defers resumption.
+3. **Dispatch Ready Waves**:
+   Run `python3 spec-driven/scripts/spec-orca.py dispatch-ready .specs/<feature-slug> --json`.
+   - **Parallel-Safe Tasks**: Spawned in isolated child worktrees via:
+     `orca orchestration worker-start --task <id> --worktree new-child --agent <agent> --model <model> --effort <effort> --setup run`
+   - **Sequential Tasks**: Executed in the coordinator's current worktree (`--worktree current`).
+   - **Unattended Execution**: Pass canonical non-interactive flags from [`spec-driven/contracts/agent_profiles.json`](../spec-driven/contracts/agent_profiles.json) (`--dangerously-skip-permissions` for Claude Code, `--full-auto` for Codex, `--yolo` for Antigravity).
+4. **Supervised PTY Event Loop**:
+   - For TUI agents, wait for idle: `orca terminal wait --terminal <handle> --for tui-idle --timeout-ms 10000`.
+   - Listen for worker events: `orca orchestration check --wait --types worker_done,escalation,question --timeout-ms 30000`.
+   - When receiving `worker_done`, verify the structured return payload, test changed files against cited requirements, release the terminal via `orca orchestration worker-release --terminal <handle>`, and refresh the execution ledger and Gantt chart via `python3 spec-driven/scripts/render-gantt.py .specs/<feature-slug> --write`.
 
 ### Capability mapping and reasoning level
 

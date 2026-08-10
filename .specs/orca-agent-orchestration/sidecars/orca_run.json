@@ -1,0 +1,24 @@
+{
+  "schema_version": 1,
+  "run_id": "run-orca-agent-orchestration",
+  "feature_slug": "orca-agent-orchestration",
+  "status": "active",
+  "coordinator_handle": "coordinator",
+  "tasks_map": {
+    "1.1": "orca-orca-agent-orchestration-1.1",
+    "1.2": "orca-orca-agent-orchestration-1.2",
+    "1.3": "orca-orca-agent-orchestration-1.3",
+    "2.1": "orca-orca-agent-orchestration-2.1",
+    "2.2": "orca-orca-agent-orchestration-2.2",
+    "2.3": "orca-orca-agent-orchestration-2.3",
+    "3.1": "orca-orca-agent-orchestration-3.1",
+    "3.2": "orca-orca-agent-orchestration-3.2",
+    "3.3": "orca-orca-agent-orchestration-3.3",
+    "4.1": "orca-orca-agent-orchestration-4.1",
+    "4.2": "orca-orca-agent-orchestration-4.2",
+    "4.3": "orca-orca-agent-orchestration-4.3",
+    "4.4": "orca-orca-agent-orchestration-4.4"
+  },
+  "dispatches": [],
+  "decision_gates": []
+}

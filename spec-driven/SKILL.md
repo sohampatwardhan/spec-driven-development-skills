@@ -32,14 +32,18 @@ gated by explicit user approval; every task traces back to a numbered requiremen
 
 When working inside a project, create `.specs/` at the project root and keep the feature's
 `00_state.md` and `01_discovery.md` through `05_execution.md` together under
-`.specs/<feature-slug>/`. Never put these
+`.specs/<feature-slug>/`, with machine-readable sidecars stored in `.specs/<feature-slug>/sidecars/`
+validated against formal JSON schemas in [`contracts/schemas/`](contracts/schemas). Never put these
 numbered planning artifacts in a global skill directory or unrelated scratch/output location.
 Resolve shared references from the active `spec-driven` skill directory; never hard-code a
 tool-specific home-directory path. Layout, templates, and the traceability chain:
 [references/artifacts.md](references/artifacts.md). Diagram selection and source-of-truth rules:
 [references/diagrams.md](references/diagrams.md).
 Portable capability, I/O, role, budget, and adapter semantics:
-[contracts/spec-family.yaml](contracts/spec-family.yaml). Shared dependency rules:
+[contracts/spec-family.yaml](contracts/spec-family.yaml) and [contracts/agent_profiles.json](contracts/agent_profiles.json).
+Orca orchestration: [`scripts/spec-orca.py`](scripts/spec-orca.py) and [references/orca-orchestration.md](references/orca-orchestration.md).
+Deterministic Gantt generation: [`scripts/render-gantt.py`](scripts/render-gantt.py).
+Shared dependency rules:
 [references/dependency-evidence.md](references/dependency-evidence.md). Deterministic subagent
 model-tier routing: [references/model-routing.md](references/model-routing.md), resolved via
 `scripts/model-router.py`. Deterministic subagent fan-out (how many reviewers, not which model):

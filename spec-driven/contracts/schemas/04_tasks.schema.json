@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://specs.agentskills.io/schemas/04_tasks.schema.json",
+  "title": "SpecTasksSidecar",
+  "description": "Schema for 04_tasks.json task DAG, model routing, and Orca dispatch metadata sidecar",
+  "type": "object",
+  "required": ["schema_version", "generated_from", "requirement_count", "stages", "tasks", "concurrency"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "generated_from": {
+      "type": "object",
+      "required": ["file", "sha256"],
+      "properties": {
+        "file": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "requirement_count": { "type": "integer" },
+    "stages": {
+      "type": "object",
+      "additionalProperties": { "type": "array", "items": { "type": "string" } }
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "checked", "stage", "depends_on", "files", "delegation", "task_category", "capability_tier", "resolved_model", "reasoning_level", "requirements"],
+        "properties": {
+          "id": { "type": "string" },
+          "title": { "type": "string" },
+          "checked": { "type": "boolean" },
+          "optional": { "type": "boolean" },
+          "stage": { "type": ["integer", "null"] },
+          "depends_on": { "type": "array", "items": { "type": "string" } },
+          "files": { "type": "array", "items": { "type": "string" } },
+          "delegation": { "type": "string", "enum": ["controller", "sequential subagent", "parallel-safe"] },
+          "dependency_resolution": { "type": "string" },
+          "dependency_delivery": { "type": "string" },
+          "interfaces": { "type": "string" },
+          "verification": { "type": "string" },
+          "risk": { "type": ["string", "null"] },
+          "requirements": { "type": "array", "items": { "type": "string" } },
+          "task_category": { "type": "string" },
+          "capability_tier": { "type": "string" },
+          "resolved_model": { "type": "string" },
+          "reasoning_level": { "type": "string" },
+          "orca_dispatch": {
+            "type": "object",
+            "properties": {
+              "worktree_mode": { "type": "string", "enum": ["new-child", "current", "none"] },
+              "agent": { "type": "string" },
+              "unattended_flags": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    },
+    "concurrency": {
+      "type": "object",
+      "required": ["active_stage", "ready", "parallel_candidates", "serial_candidates", "blocked", "waves"],
+      "properties": {
+        "active_stage": { "type": ["integer", "null"] },
+        "ready": { "type": "array", "items": { "type": "string" } },
+        "parallel_candidates": { "type": "array", "items": { "type": "string" } },
+        "serial_candidates": { "type": "array", "items": { "type": "string" } },
+        "blocked": { "type": "object" },
+        "waves": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["wave", "mode", "tasks"],
+            "properties": {
+              "wave": { "type": "integer" },
+              "mode": { "type": "string", "enum": ["parallel", "serial"] },
+              "tasks": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        }
+      }
+    }
+  }
+}

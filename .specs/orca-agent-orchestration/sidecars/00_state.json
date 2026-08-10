@@ -1,0 +1,39 @@
+{
+  "change_control": [
+    "Initial discovery drafted and approved for Orca multi-agent task orchestration.",
+    "Requirements 1 to 10 drafted, sidecars created in [`sidecars/`](sidecars) directory, and formal JSON schemas authored.",
+    "Technical design approved with unattended CLI flag matrix, deterministic Gantt engine, and budget/quota inspector.",
+    "Implementation tasks broken down into 4 stages with strict concurrency barriers and dependency blocking."
+  ],
+  "gates": {
+    "audit": {
+      "evidence": "Self-hardened and verified (113 tests passed)",
+      "status": "approved"
+    },
+    "design": {
+      "evidence": "Architecture, JSON schemas, Gantt generator, and quota inspector specified (2026-08-10)",
+      "status": "approved"
+    },
+    "discovery": {
+      "evidence": "Approved by user on 2026-08-10",
+      "status": "approved"
+    },
+    "execution": {
+      "evidence": "All 13 tasks verified across 4 stages; 113 tests passing",
+      "status": "complete"
+    },
+    "requirements": {
+      "evidence": "10 requirements and 39 acceptance criteria verified (2026-08-10)",
+      "status": "approved"
+    },
+    "tasks": {
+      "evidence": "13 tasks across 4 stages with DAG dependency blocking (2026-08-10)",
+      "status": "approved"
+    }
+  },
+  "generated_from": {
+    "file": "00_state.md",
+    "sha256": "6f0de16cac525754db456eb38f6615211994684980785d621200f83b0540b53c"
+  },
+  "schema_version": 1
+}

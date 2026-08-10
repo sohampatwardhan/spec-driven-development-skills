@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://specs.agentskills.io/schemas/02_requirements.schema.json",
+  "title": "SpecRequirementsSidecar",
+  "description": "Schema for 02_requirements.json user stories and EARS acceptance criteria sidecar",
+  "type": "object",
+  "required": ["schema_version", "generated_from", "requirements"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "generated_from": {
+      "type": "object",
+      "required": ["file", "sha256"],
+      "properties": {
+        "file": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "requirements": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "user_story", "criteria"],
+        "properties": {
+          "id": { "type": "string" },
+          "user_story": {
+            "type": "object",
+            "required": ["role", "capability", "benefit"],
+            "properties": {
+              "role": { "type": "string" },
+              "capability": { "type": "string" },
+              "benefit": { "type": "string" }
+            }
+          },
+          "criteria": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["id", "kind", "trigger", "behavior"],
+              "properties": {
+                "id": { "type": "string", "pattern": "^\\d+\\.\\d+$" },
+                "kind": { "type": "string", "enum": ["unconditional", "event", "state", "unwanted", "optional"] },
+                "trigger": { "type": "string" },
+                "actor": { "type": "string" },
+                "behavior": { "type": "string" }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

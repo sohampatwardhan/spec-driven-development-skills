@@ -1,0 +1,382 @@
+{
+  "schema_version": 1,
+  "generated_from": {
+    "file": "02_requirements.md",
+    "sha256": "132007b2cd186c039b12d4a9feba506eba86c7bd657bfdb133b78ac7c16749c4"
+  },
+  "requirements": [
+    {
+      "id": "1",
+      "user_story": {
+        "role": "spec-driven developer or agent",
+        "capability": "the spec family contract to define the Orca runtime adapter and canonical unattended CLI flag profiles across supported coding agents",
+        "benefit": "multi-agent dispatches run without interactive terminal freezes"
+      },
+      "criteria": [
+        {
+          "id": "1.1",
+          "kind": "event",
+          "trigger": "the spec family contract is evaluated",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN the spec family contract is evaluated, THE [`spec-driven/contracts/spec-family.yaml`](../../spec-driven/contracts/spec-family.yaml) contract SHALL define the `orca` runtime adapter with capabilities for runs, task DAGs, dispatches, decision gates, and worktree isolation."
+        },
+        {
+          "id": "1.2",
+          "kind": "event",
+          "trigger": "agent CLI launch arguments are resolved for Claude Code",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN agent CLI launch arguments are resolved for Claude Code, THE adapter profile SHALL include `--dangerously-skip-permissions` for implementers and read-only tool allowlists for reviewers."
+        },
+        {
+          "id": "1.3",
+          "kind": "event",
+          "trigger": "agent CLI launch arguments are resolved for OpenAI Codex",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN agent CLI launch arguments are resolved for OpenAI Codex, THE adapter profile SHALL include `--full-auto` or `--approval-level never`."
+        },
+        {
+          "id": "1.4",
+          "kind": "event",
+          "trigger": "agent CLI launch arguments are resolved for Google Antigravity",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN agent CLI launch arguments are resolved for Google Antigravity, THE adapter profile SHALL include `--yolo` or `--auto-approve`."
+        },
+        {
+          "id": "1.5",
+          "kind": "event",
+          "trigger": "agent CLI launch arguments are resolved for Cursor CLI",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN agent CLI launch arguments are resolved for Cursor CLI, THE adapter profile SHALL include `--approve-all` and `--headless`."
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "user_story": {
+        "role": "execution coordinator",
+        "capability": "a deterministic bridge utility to read `04_tasks.json` and register the complete task graph in Orca",
+        "benefit": "dependencies, parent-child hierarchies, and checkpoints are faithfully represented in the Orca runtime"
+      },
+      "criteria": [
+        {
+          "id": "2.1",
+          "kind": "event",
+          "trigger": "`scripts/spec-orca.py sync` is invoked with a spec directory",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN `scripts/spec-orca.py sync` is invoked with a spec directory, THE bridge utility SHALL read `04_tasks.json` and create or bind an Orca Run via `orca orchestration run-create` or `run-use`."
+        },
+        {
+          "id": "2.2",
+          "kind": "event",
+          "trigger": "tasks are registered in Orca",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN tasks are registered in Orca, THE bridge utility SHALL map each task's `depends_on` array to Orca prerequisite task IDs using `--deps`."
+        },
+        {
+          "id": "2.3",
+          "kind": "optional",
+          "trigger": "a task in `04_tasks.json` defines a parent stage or task",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHERE a task in `04_tasks.json` defines a parent stage or task, THE bridge utility SHALL bind the child task to its parent using `--parent`."
+        },
+        {
+          "id": "2.4",
+          "kind": "optional",
+          "trigger": "[04_tasks.md](04_tasks.md) contains a Checkpoint group",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHERE [04_tasks.md](04_tasks.md) contains a Checkpoint group, THE bridge utility SHALL register an Orca decision gate using `orca orchestration gate-create`."
+        },
+        {
+          "id": "2.5",
+          "kind": "unwanted",
+          "trigger": "`04_tasks.json` is missing or its hash does not match [04_tasks.md](04_tasks.md)",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "IF `04_tasks.json` is missing or its hash does not match [04_tasks.md](04_tasks.md), THEN THE bridge utility SHALL reject synchronization and exit with a stale sidecar error."
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "user_story": {
+        "role": "execution coordinator",
+        "capability": "to dispatch workers according to their `Delegation` and model-routing metadata",
+        "benefit": "parallel tasks run safely in isolated child worktrees without filesystem conflicts"
+      },
+      "criteria": [
+        {
+          "id": "3.1",
+          "kind": "event",
+          "trigger": "a task with `Delegation: parallel-safe` is dispatched",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN a task with `Delegation: parallel-safe` is dispatched, THE coordinator SHALL launch the worker in an isolated child worktree using `orca orchestration worker-start --worktree new-child --setup run`."
+        },
+        {
+          "id": "3.2",
+          "kind": "event",
+          "trigger": "a task with `Delegation: sequential subagent` is dispatched",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN a task with `Delegation: sequential subagent` is dispatched, THE coordinator SHALL launch the worker in the current worktree using `orca orchestration worker-start --worktree current`."
+        },
+        {
+          "id": "3.3",
+          "kind": "event",
+          "trigger": "launching a worker terminal",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN launching a worker terminal, THE coordinator SHALL resolve model and effort flags from the task's `resolved_model` and `reasoning_level` fields."
+        },
+        {
+          "id": "3.4",
+          "kind": "state",
+          "trigger": "launching a worker via custom terminal command, WHEN the terminal process starts",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHILE launching a worker via custom terminal command, WHEN the terminal process starts, THE coordinator SHALL wait for `tui-idle` before injecting the task brief."
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "user_story": {
+        "role": "execution coordinator",
+        "capability": "supervised workers to communicate status, questions, and completion through structured Orca messages",
+        "benefit": "execution progress and evidence are tracked deterministically"
+      },
+      "criteria": [
+        {
+          "id": "4.1",
+          "kind": "event",
+          "trigger": "an implementer finishes a task attempt",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN an implementer finishes a task attempt, THE worker SHALL send a `worker_done` message with an explicit outcome and structured payload containing criteria results, changed files, and verification evidence."
+        },
+        {
+          "id": "4.2",
+          "kind": "state",
+          "trigger": "supervising active workers, WHEN the coordinator waits for events",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHILE supervising active workers, WHEN the coordinator waits for events, THE coordinator SHALL invoke `orca orchestration check --wait --types worker_done,escalation,question`."
+        },
+        {
+          "id": "4.3",
+          "kind": "event",
+          "trigger": "a worker sends an `ask` message",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN a worker sends an `ask` message, THE coordinator SHALL process the question and reply via `orca orchestration reply`."
+        },
+        {
+          "id": "4.4",
+          "kind": "event",
+          "trigger": "a `worker_done` report is accepted",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN a `worker_done` report is accepted, THE coordinator SHALL release the settled worker terminal using `orca orchestration worker-release`."
+        },
+        {
+          "id": "4.5",
+          "kind": "unwanted",
+          "trigger": "a worker dispatch fails or crashes",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "IF a worker dispatch fails or crashes, THEN THE coordinator SHALL capture the buffered terminal transcript, record failure evidence in `05_execution.md`, and initiate a bounded repair attempt within `self_repair_rounds`."
+        }
+      ]
+    },
+    {
+      "id": "5",
+      "user_story": {
+        "role": "reviewer or audit coordinator",
+        "capability": "to dispatch parallel reviewer agents across independent audit lenses",
+        "benefit": "spec artifacts are thoroughly vetted without polluting coordinator context"
+      },
+      "criteria": [
+        {
+          "id": "5.1",
+          "kind": "event",
+          "trigger": "[`spec-audit`](../../spec-audit/SKILL.md) is invoked",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN [`spec-audit`](../../spec-audit/SKILL.md) is invoked, THE coordinator SHALL resolve reviewer fan-out via [`spec-driven/scripts/fanout.py`](../../spec-driven/scripts/fanout.py) and dispatch independent reviewer workers in parallel Orca terminals."
+        },
+        {
+          "id": "5.2",
+          "kind": "event",
+          "trigger": "a reviewer completes its evaluation",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN a reviewer completes its evaluation, THE reviewer SHALL return a structured `review_verdict` payload conforming to [`spec-driven/contracts/spec-family.yaml`](../../spec-driven/contracts/spec-family.yaml)."
+        },
+        {
+          "id": "5.3",
+          "kind": "event",
+          "trigger": "all reviewer reports settle",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN all reviewer reports settle, THE coordinator SHALL merge findings into deduplicated CERTAIN and UNCERTAIN categories and update [00_state.md](00_state.md)."
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "user_story": {
+        "role": "developer resuming execution",
+        "capability": "Orca run telemetry synchronized with `05_execution.md` / `05_execution.json` and a reliable fallback when Orca is not installed",
+        "benefit": "execution state remains durable and portable across environments"
+      },
+      "criteria": [
+        {
+          "id": "6.1",
+          "kind": "event",
+          "trigger": "a task dispatch settles",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN a task dispatch settles, THE coordinator SHALL record observed start and stop timestamps from Orca dispatch telemetry into `05_execution.md` and regenerate `05_execution.json`."
+        },
+        {
+          "id": "6.2",
+          "kind": "optional",
+          "trigger": "the `orca` binary is not present on the host system",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHERE the `orca` binary is not present on the host system, THE skills SHALL execute tasks sequentially in standard local mode without error."
+        },
+        {
+          "id": "6.3",
+          "kind": "event",
+          "trigger": "resuming an interrupted execution run",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN resuming an interrupted execution run, THE coordinator SHALL rebind to the existing Orca Run using `orca orchestration run-use` and reconcile task states against `04_tasks.json`."
+        }
+      ]
+    },
+    {
+      "id": "7",
+      "user_story": {
+        "role": "developer or autonomous toolchain",
+        "capability": "all spec phases to produce and validate machine-readable JSON sidecars via deterministic scripts",
+        "benefit": "traceability, audit analysis, and Orca execution are tested against structured data models before and alongside Markdown documentation"
+      },
+      "criteria": [
+        {
+          "id": "7.1",
+          "kind": "event",
+          "trigger": "spec artifacts are validated or emitted",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN spec artifacts are validated or emitted, THE [`spec-driven/scripts/spec-check.py`](../../spec-driven/scripts/spec-check.py) script SHALL support JSON sidecars across discovery ([`01_discovery.json`](sidecars/01_discovery.json)), requirements ([`02_requirements.json`](sidecars/02_requirements.json)), design (`03_design.json`), tasks (`04_tasks.json`), state ([`00_state.json`](sidecars/00_state.json)), and execution (`05_execution.json`)."
+        },
+        {
+          "id": "7.2",
+          "kind": "event",
+          "trigger": "`03_design.json` is generated",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN `03_design.json` is generated, THE sidecar SHALL structure architecture components, correctness properties with `validates` requirement references, current technology evidence, and dependency security evidence."
+        },
+        {
+          "id": "7.3",
+          "kind": "event",
+          "trigger": "`04_tasks.json` is generated",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN `04_tasks.json` is generated, THE sidecar SHALL include Orca dispatch configuration, unattended agent CLI flags, and explicit dependency IDs."
+        },
+        {
+          "id": "7.4",
+          "kind": "event",
+          "trigger": "[`spec-audit`](../../spec-audit/SKILL.md) evaluates a spec",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN [`spec-audit`](../../spec-audit/SKILL.md) evaluates a spec, THE audit toolchain SHALL support emitting a structured `audit_findings.json` sidecar classifying P0/P1/P2 findings and CERTAIN/UNCERTAIN fixes."
+        },
+        {
+          "id": "7.5",
+          "kind": "state",
+          "trigger": "verifying traceability",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHILE verifying traceability, THE [`spec-driven/scripts/spec-check.py`](../../spec-driven/scripts/spec-check.py) script SHALL perform 3-way in-memory validation among [`02_requirements.json`](sidecars/02_requirements.json), `03_design.json`, and `04_tasks.json`."
+        }
+      ]
+    },
+    {
+      "id": "8",
+      "user_story": {
+        "role": "developer or toolchain maintainer",
+        "capability": "formal JSON Schemas for all sidecars and a clean folder separation between human-facing Markdown docs and machine-readable sidecars",
+        "benefit": "data integrity is strictly enforced"
+      },
+      "criteria": [
+        {
+          "id": "8.1",
+          "kind": "event",
+          "trigger": "JSON sidecars are defined or generated",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN JSON sidecars are defined or generated, THE [`spec-driven/contracts/schemas/`](../../spec-driven/contracts/schemas) directory SHALL provide formal JSON Schemas for each sidecar artifact."
+        },
+        {
+          "id": "8.2",
+          "kind": "event",
+          "trigger": "sidecars are saved in a feature directory",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN sidecars are saved in a feature directory, THE sidecar files SHALL be stored in a dedicated `.specs/<slug>/sidecars/` directory separate from the Markdown documentation in `.specs/<slug>/`."
+        },
+        {
+          "id": "8.3",
+          "kind": "event",
+          "trigger": "`spec-check.py` validates sidecars",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN `spec-check.py` validates sidecars, THE script SHALL validate each sidecar against its corresponding JSON Schema."
+        }
+      ]
+    },
+    {
+      "id": "9",
+      "user_story": {
+        "role": "execution coordinator or viewer",
+        "capability": "execution Gantt charts to be generated and refreshed automatically by a deterministic script whenever schedules or timing intervals change",
+        "benefit": "progress visualization is always accurate and syntax-error-free"
+      },
+      "criteria": [
+        {
+          "id": "9.1",
+          "kind": "event",
+          "trigger": "execution intervals or schedules update in `05_execution.json` or [`sidecars/04_tasks.json`](sidecars/04_tasks.json)",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN execution intervals or schedules update in `05_execution.json` or [`sidecars/04_tasks.json`](sidecars/04_tasks.json), THE system SHALL automatically generate and refresh the Mermaid `gantt` chart via script."
+        },
+        {
+          "id": "9.2",
+          "kind": "event",
+          "trigger": "generating Mermaid Gantt source",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN generating Mermaid Gantt source, THE generator script SHALL validate syntax deterministically, handle sub-second or 0-second intervals safely, format dates without manual transcription, and inject the validated fenced block into `05_execution.md`."
+        },
+        {
+          "id": "9.3",
+          "kind": "unwanted",
+          "trigger": "a generated Mermaid Gantt fails syntax validation",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "IF a generated Mermaid Gantt fails syntax validation, THEN THE generator script SHALL reject the invalid diagram and preserve diagnostic failure evidence without corrupting the execution ledger."
+        }
+      ]
+    },
+    {
+      "id": "10",
+      "user_story": {
+        "role": "orchestration operator or automated developer",
+        "capability": "the system to check remaining credits, usage limits, and provider quotas to intelligently select models and defer execution when budget or rate limits require it",
+        "benefit": "orchestration optimizes cost and avoids hard exhaustion failures"
+      },
+      "criteria": [
+        {
+          "id": "10.1",
+          "kind": "event",
+          "trigger": "resolving task models or preparing dispatch envelopes",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "WHEN resolving task models or preparing dispatch envelopes, THE system SHALL inspect remaining credits, token budget, or provider usage constraints."
+        },
+        {
+          "id": "10.2",
+          "kind": "unwanted",
+          "trigger": "credits or quota limits are constrained below threshold levels",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "IF credits or quota limits are constrained below threshold levels, THEN THE model router SHALL dynamically down-tier lower-complexity task categories to budget-efficient models while preserving high-tier reasoning for core logic."
+        },
+        {
+          "id": "10.3",
+          "kind": "unwanted",
+          "trigger": "provider credits or quota limits are exhausted or rate-limited",
+          "actor": "coordinator / worker / bridge utility / adapter",
+          "behavior": "IF provider credits or quota limits are exhausted or rate-limited, THEN THE orchestration engine SHALL pause execution and schedule resumption for a later time with persistent state checkpoints."
+        }
+      ]
+    }
+  ]
+}

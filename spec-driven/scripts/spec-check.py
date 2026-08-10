@@ -2124,28 +2124,41 @@ def _read_json_sidecar(path: Path) -> tuple[dict[str, object] | None, str | None
     return payload, None
 
 
+def _sidecar_pairs(root: Path) -> list[tuple[Path, Path, str, str]]:
+    """Return (json_path, md_path, json_name, md_name) tuples for root and sidecars/."""
+    pairs: list[tuple[Path, Path, str, str]] = []
+    names = (
+        ("00_state.json", "00_state.md"),
+        ("01_discovery.json", "01_discovery.md"),
+        ("02_requirements.json", "02_requirements.md"),
+        ("03_design.json", "03_design.md"),
+        ("04_tasks.json", "04_tasks.md"),
+        ("05_execution.json", "05_execution.md"),
+    )
+    for json_name, md_name in names:
+        # Check sidecars/ subfolder first, then root
+        sidecar_path = root / "sidecars" / json_name
+        if not sidecar_path.is_file():
+            sidecar_path = root / json_name
+        if sidecar_path.is_file():
+            pairs.append((sidecar_path, root / md_name, json_name, md_name))
+    return pairs
+
+
 def sidecar_freshness_errors(root: Path) -> list[str]:
     """Report a JSON sidecar whose `generated_from.sha256` no longer matches its Markdown twin.
 
     Mirrors `spec-nav.py`'s nav-block check in mechanism (unconditional, hash-based) but not in
-    mandatoriness: a spec that has never generated `04_tasks.json`/`05_execution.json` is not
-    penalized for the sidecar's absence — only an existing sidecar that has gone stale, or an
-    orphaned sidecar whose Markdown twin disappeared, is an error.
+    mandatoriness: a spec that has never generated sidecars is not penalized — only an existing
+    sidecar that has gone stale, or an orphaned sidecar whose Markdown twin disappeared, is an error.
     """
     errors: list[str] = []
-    for json_name, md_name in (
-        ("00_state.json", "00_state.md"),
-        ("04_tasks.json", "04_tasks.md"),
-        ("05_execution.json", "05_execution.md"),
-    ):
-        json_path = root / json_name
-        if not json_path.is_file():
-            continue
+    pairs = _sidecar_pairs(root)
+    for json_path, md_path, json_name, md_name in pairs:
         payload, error = _read_json_sidecar(json_path)
         if error:
             errors.append(error)
             continue
-        md_path = root / md_name
         if not md_path.is_file():
             errors.append(f"{json_name} exists without {md_name}; remove the orphaned sidecar")
             continue
@@ -2173,12 +2186,15 @@ def emit_json_sidecars(
     """Write `00_state.json`/`04_tasks.json`/`05_execution.json`; return (written, errors)."""
     written: list[str] = []
     errors: list[str] = []
+    # If sidecars/ folder exists in target_dir, write sidecars there
+    out_dir = target_dir / "sidecars" if (target_dir / "sidecars").is_dir() else target_dir
+
     if state_text is not None:
         payload, state_errors = build_state_sidecar(state_text)
         if state_errors:
             errors.extend(f"00_state.json: {error}" for error in state_errors)
         else:
-            (target_dir / "00_state.json").write_text(
+            (out_dir / "00_state.json").write_text(
                 json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
             )
             written.append("00_state.json")
@@ -2188,7 +2204,7 @@ def emit_json_sidecars(
         if task_errors:
             errors.extend(f"04_tasks.json: {error}" for error in task_errors)
         else:
-            (target_dir / "04_tasks.json").write_text(
+            (out_dir / "04_tasks.json").write_text(
                 json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
             )
             written.append("04_tasks.json")
@@ -2197,7 +2213,7 @@ def emit_json_sidecars(
         if execution_errors:
             errors.extend(f"05_execution.json: {error}" for error in execution_errors)
         else:
-            (target_dir / "05_execution.json").write_text(
+            (out_dir / "05_execution.json").write_text(
                 json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8"
             )
             written.append("05_execution.json")

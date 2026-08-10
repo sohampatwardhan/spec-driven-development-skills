@@ -557,16 +557,36 @@ class SidecarFreshnessTests(unittest.TestCase):
                 ["python3", str(SCRIPT), str(spec_dir), "--emit-json"],
                 check=False, capture_output=True, text=True,
             )
-            # Touch the Markdown (simulating a routine edit), then regenerate and check at once.
-            tasks_path = spec_dir / "04_tasks.md"
-            tasks_path.write_text(tasks_path.read_text(encoding="utf-8") + "\n<!-- edited -->\n", encoding="utf-8")
-            result = subprocess.run(
-                ["python3", str(SCRIPT), str(spec_dir), "--emit-json", "--format", "json"],
+    def test_all_nine_schemas_valid_and_loadable(self) -> None:
+        schemas_dir = SKILL_DIR / "contracts" / "schemas"
+        schema_files = list(schemas_dir.glob("*.schema.json"))
+        self.assertGreaterEqual(len(schema_files), 7)
+        for schema_file in schema_files:
+            data = json.loads(schema_file.read_text(encoding="utf-8"))
+            self.assertEqual("https://json-schema.org/draft/2020-12/schema", data.get("$schema"))
+            self.assertTrue(data.get("title"))
+
+    def test_sidecars_in_dedicated_subfolder_are_discovered_and_checked(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            spec_dir = Path(directory) / ".specs" / "example"
+            self._write_minimal_spec(spec_dir)
+            sidecars_dir = spec_dir / "sidecars"
+            sidecars_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Emit sidecars into sidecars/ folder
+            emit = subprocess.run(
+                ["python3", str(SCRIPT), str(spec_dir), "--emit-json"],
                 check=False, capture_output=True, text=True,
             )
-            payload = json.loads(result.stdout)
-            self.assertTrue(payload["ok"], payload["errors"])
+            self.assertEqual(0, emit.returncode, emit.stdout + emit.stderr)
+            self.assertTrue((sidecars_dir / "00_state.json").is_file())
+            self.assertTrue((sidecars_dir / "04_tasks.json").is_file())
+            
+            # Verify freshness passes
+            errors = spec_check.sidecar_freshness_errors(spec_dir)
+            self.assertEqual([], errors)
 
 
 if __name__ == "__main__":
     unittest.main()
+

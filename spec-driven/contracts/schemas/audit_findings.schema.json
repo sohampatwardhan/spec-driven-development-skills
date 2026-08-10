@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://specs.agentskills.io/schemas/audit_findings.schema.json",
+  "title": "AuditFindingsSchema",
+  "description": "Schema for structured spec-audit findings and automated fix recommendations",
+  "type": "object",
+  "required": ["schema_version", "artifact_digest", "audit_depth", "result", "findings"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "artifact_digest": { "type": "string", "pattern": "^[a-f0-9]{64}$" },
+    "audit_depth": { "type": "string", "enum": ["quick", "medium", "thorough"] },
+    "result": { "type": "string", "enum": ["passed", "findings_open", "fixes_applied"] },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "severity", "classification", "lens", "defect", "evidence"],
+        "properties": {
+          "id": { "type": "string" },
+          "severity": { "type": "string", "enum": ["P0", "P1", "P2"] },
+          "classification": { "type": "string", "enum": ["CERTAIN", "UNCERTAIN"] },
+          "lens": { "type": "string", "enum": ["traceability", "technical_factual", "adversarial"] },
+          "defect": { "type": "string" },
+          "evidence": { "type": "string" },
+          "proposed_fix": { "type": "string" },
+          "validation_method": { "type": "string" }
+        }
+      }
+    },
+    "risk_register": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["risk", "likelihood", "impact", "mitigation"],
+        "properties": {
+          "risk": { "type": "string" },
+          "likelihood": { "type": "string", "enum": ["low", "medium", "high"] },
+          "impact": { "type": "string", "enum": ["low", "medium", "high"] },
+          "mitigation": { "type": "string" }
+        }
+      }
+    }
+  }
+}

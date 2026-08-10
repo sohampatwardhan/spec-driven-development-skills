@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://specs.agentskills.io/schemas/03_design.schema.json",
+  "title": "SpecDesignSidecar",
+  "description": "Schema for 03_design.json architecture components, correctness properties, and technology evidence sidecar",
+  "type": "object",
+  "required": ["schema_version", "generated_from", "architecture", "correctness_properties"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "generated_from": {
+      "type": "object",
+      "required": ["file", "sha256"],
+      "properties": {
+        "file": { "type": "string" },
+        "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+      }
+    },
+    "architecture": {
+      "type": "object",
+      "required": ["components"],
+      "properties": {
+        "components": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "responsibility"],
+            "properties": {
+              "id": { "type": "string" },
+              "name": { "type": "string" },
+              "responsibility": { "type": "string" },
+              "interfaces": { "type": "array", "items": { "type": "string" } },
+              "files": { "type": "array", "items": { "type": "string" } }
+            }
+          }
+        },
+        "data_models": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string" },
+              "fields": { "type": "object" }
+            }
+          }
+        }
+      }
+    },
+    "correctness_properties": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "description", "validates_requirements"],
+        "properties": {
+          "id": { "type": "string" },
+          "description": { "type": "string" },
+          "validates_requirements": {
+            "type": "array",
+            "items": { "type": "string", "pattern": "^\\d+\\.\\d+$" }
+          }
+        }
+      }
+    },
+    "current_technology_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["technology", "decision"],
+        "properties": {
+          "technology": { "type": "string" },
+          "source": { "type": "string" },
+          "selected_version": { "type": "string" },
+          "query": { "type": "string" },
+          "decision": { "type": "string" }
+        }
+      }
+    },
+    "dependency_security_evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["dependency", "result"],
+        "properties": {
+          "dependency": { "type": "string" },
+          "trigger_mode": { "type": "string" },
+          "result": { "type": "string" }
+        }
+      }
+    }
+  }
+}

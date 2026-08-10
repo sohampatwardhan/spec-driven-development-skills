@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://specs.agentskills.io/schemas/orca_run.schema.json",
+  "title": "OrcaRunStateSchema",
+  "description": "Schema for live or synchronized Orca Orchestration Run state, task mappings, and worker allocations",
+  "type": "object",
+  "required": ["schema_version", "run_id", "feature_slug", "status", "tasks_map"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "run_id": { "type": "string" },
+    "feature_slug": { "type": "string" },
+    "status": { "type": "string", "enum": ["active", "paused", "completed", "failed"] },
+    "coordinator_handle": { "type": "string" },
+    "tasks_map": {
+      "type": "object",
+      "description": "Mapping from Spec Task ID to Orca Task ID",
+      "additionalProperties": { "type": "string" }
+    },
+    "dispatches": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["task_id", "orca_task_id", "dispatch_id", "worker_handle", "status"],
+        "properties": {
+          "task_id": { "type": "string" },
+          "orca_task_id": { "type": "string" },
+          "dispatch_id": { "type": "string" },
+          "worker_handle": { "type": "string" },
+          "worktree_path": { "type": "string" },
+          "agent": { "type": "string" },
+          "model": { "type": "string" },
+          "effort": { "type": "string" },
+          "status": { "type": "string", "enum": ["dispatched", "running", "succeeded", "failed", "abandoned"] },
+          "started_at": { "type": "string" },
+          "settled_at": { "type": "string" }
+        }
+      }
+    },
+    "decision_gates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["gate_id", "task_id", "question", "status"],
+        "properties": {
+          "gate_id": { "type": "string" },
+          "task_id": { "type": "string" },
+          "question": { "type": "string" },
+          "options": { "type": "array", "items": { "type": "string" } },
+          "status": { "type": "string", "enum": ["pending", "resolved"] },
+          "resolved_choice": { "type": "string" }
+        }
+      }
+    }
+  }
+}

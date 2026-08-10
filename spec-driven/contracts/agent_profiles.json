@@ -1,0 +1,84 @@
+{
+  "schema_version": 1,
+  "agents": {
+    "claude": {
+      "binary": "claude",
+      "unattended_flags": ["--dangerously-skip-permissions"],
+      "model_flag": "--model",
+      "effort_flag": "--effort",
+      "role_overrides": {
+        "implementer": {
+          "unattended_flags": ["--dangerously-skip-permissions"]
+        },
+        "reviewer": {
+          "unattended_flags": ["--permission-prompt-tool-allowlist", "View,Read,Grep,Glob,Search"]
+        },
+        "explorer": {
+          "unattended_flags": ["--permission-prompt-tool-allowlist", "View,Read,Grep,Glob,Search"]
+        }
+      }
+    },
+    "codex": {
+      "binary": "codex",
+      "unattended_flags": ["--full-auto", "-y"],
+      "model_flag": "--model",
+      "effort_flag": "-c model_reasoning_effort=",
+      "role_overrides": {
+        "implementer": {
+          "unattended_flags": ["--full-auto"]
+        },
+        "reviewer": {
+          "unattended_flags": ["--sandbox", "read-only"]
+        },
+        "explorer": {
+          "unattended_flags": ["--sandbox", "read-only"]
+        }
+      }
+    },
+    "agy": {
+      "binary": "agy",
+      "unattended_flags": ["--yolo", "--auto-approve"],
+      "model_flag": "--model",
+      "effort_flag": "--thinking",
+      "role_overrides": {
+        "implementer": {
+          "unattended_flags": ["--yolo", "--auto-approve"]
+        },
+        "reviewer": {
+          "unattended_flags": ["--read-only"]
+        },
+        "explorer": {
+          "unattended_flags": ["--read-only"]
+        }
+      }
+    },
+    "cursor": {
+      "binary": "cursor-agent",
+      "unattended_flags": ["--approve-all", "--headless"],
+      "model_flag": "--model",
+      "effort_flag": "--thinking-level",
+      "role_overrides": {
+        "implementer": {
+          "unattended_flags": ["--approve-all", "--headless"]
+        },
+        "reviewer": {
+          "unattended_flags": ["--headless", "--read-only"]
+        }
+      }
+    },
+    "opencode": {
+      "binary": "opencode",
+      "unattended_flags": ["--auto-confirm", "--yes"],
+      "model_flag": "--model",
+      "effort_flag": "--reasoning",
+      "role_overrides": {
+        "implementer": {
+          "unattended_flags": ["--auto-confirm", "--yes"]
+        },
+        "reviewer": {
+          "unattended_flags": ["--read-only"]
+        }
+      }
+    }
+  }
+}

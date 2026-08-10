@@ -579,16 +579,16 @@ result semantics, and main/release gates; or a concise not-applicable statement.
 
 <For plans with multiple stages, dependency edges, or checkpoints, add a render-validated Mermaid
 `flowchart` generated from `04_tasks.json`'s `stages`/`tasks[].depends_on` (regenerate the sidecar
-first with `--emit-json` if the checklist changed): build a `graph`/`flowchart` IR
-(`mermaid/reference/ir.md`) whose `groups` are the stages, one `node` per task labelled with its
-ID and concise title, and one `edge` per declared dependency, then render it with
-`mermaid/scripts/render.py --target flowchart` and render-validate the exact output as before.
-Set each node's `status` (`done`/`ready`/`blocked`/`pending`) from the same sidecar's
-`checked`/`concurrency` fields so the diagram is color-coded by current progress; regenerate it
-whenever the sidecar is regenerated so the colors never go stale. Show no dates, estimates, or
-undeclared ordering beyond what the sidecar declares — the checklist (via the sidecar) remains
-authoritative for everything except that one derived color. Omit this section for a trivial
-single-stage plan with no checkpoint.>
+first with `--emit-json` if the checklist changed) via `spec-driven/scripts/render-gantt.py <spec-dir> --write`:
+build a `flowchart TD` whose `subgraphs` are the stages, one `node` per task labelled with its
+ID and concise title, and one `edge` per declared dependency.
+Set each node's `status` class using the standard 4-color palette:
+- **Grey (`pending`)**: `fill:#f1f5f9,stroke:#94a3b8` — tasks not yet started, ready, or queued.
+- **Red (`failed`)**: `fill:#fee2e2,stroke:#ef4444` — tasks that failed verification or encountered critical defects.
+- **Amber (`in_progress`)**: `fill:#fef3c7,stroke:#f59e0b` — tasks currently executing in an active wave.
+- **Green (`done`)**: `fill:#dcfce7,stroke:#22c55e` — verified completed tasks with checked status.
+Regenerate whenever the execution status or sidecar is updated so the colors match reality. Show no dates, estimates,
+or undeclared ordering beyond what the sidecar declares. Omit this section for a trivial single-stage plan with no checkpoint.>
 
 - [ ] 1. <Group / milestone>
   - [ ] 1.1 <discrete task — file(s) to create/change and what to implement>

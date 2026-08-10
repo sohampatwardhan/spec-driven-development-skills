@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://specs.agentskills.io/schemas/agent_profiles.schema.json",
+  "title": "AgentProfilesSchema",
+  "description": "Schema for coding agent CLI flags, unattended execution bypasses, and model/effort mappings",
+  "type": "object",
+  "required": ["schema_version", "agents"],
+  "properties": {
+    "schema_version": { "type": "integer", "const": 1 },
+    "agents": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "required": ["binary", "unattended_flags", "model_flag", "effort_flag"],
+        "properties": {
+          "binary": { "type": "string" },
+          "unattended_flags": { "type": "array", "items": { "type": "string" } },
+          "model_flag": { "type": "string" },
+          "effort_flag": { "type": "string" },
+          "role_overrides": {
+            "type": "object",
+            "properties": {
+              "implementer": {
+                "type": "object",
+                "properties": {
+                  "unattended_flags": { "type": "array", "items": { "type": "string" } }
+                }
+              },
+              "reviewer": {
+                "type": "object",
+                "properties": {
+                  "unattended_flags": { "type": "array", "items": { "type": "string" } }
+                }
+              },
+              "explorer": {
+                "type": "object",
+                "properties": {
+                  "unattended_flags": { "type": "array", "items": { "type": "string" } }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -83,19 +83,15 @@ home-directory path.
    with every dependency earlier than its dependent. Never rely on prose or list position as an
    implicit dependency for later stages.
   When the plan has multiple stages, dependency edges, or checkpoints, add a
-  **Stage and Dependency Overview** before the checklist, generated rather than hand-authored:
-  after running `--emit-json` (step 7) so `04_tasks.json` is current, build a `graph`/`flowchart`
-  IR (`mermaid/reference/ir.md`) whose `groups` are `04_tasks.json`'s `stages`, one `node` per
-  task (`04_tasks.json`'s `tasks[].id`/`title`), and one `edge` per `tasks[].depends_on` entry —
-  do not re-derive this from the checklist prose by hand. Set each node's `status` from the same
-  sidecar so the diagram is color-coded by progress, not just topology: `done` when `checked` is
-  true, `blocked` when the id appears in `concurrency.blocked`, `ready` when it appears in
-  `concurrency.ready`/`parallel_candidates`/`serial_candidates`, else `pending`. Show checkpoints
-  as visually distinct gate nodes. Render it with `mermaid/scripts/render.py --target flowchart`
-  and render-validate the exact generated source through `check.sh`/
-  `validate_and_render_mermaid_diagram` exactly as a hand-authored diagram would be — generation
-  changes how the source is authored, not whether it is verified. Label task nodes with the task
-  ID and a concise title; include every leaf and every declared dependency exactly once.
+  **Stage and Dependency Overview** before the checklist, generated deterministically via
+  `scripts/render-gantt.py <spec-dir> --write` (or `--flowchart-only`):
+  derives `04_tasks.json`'s stages into subgraphs, one node per task (`tasks[].id`/`title`), and
+  dependency edges. Color-codes task nodes using the standard 4-color status palette:
+  - **Grey (`pending`)**: `fill:#f1f5f9,stroke:#94a3b8` — tasks not yet started, ready, or queued.
+  - **Red (`failed`)**: `fill:#fee2e2,stroke:#ef4444` — tasks that failed verification or encountered critical defects.
+  - **Amber (`in_progress`)**: `fill:#fef3c7,stroke:#f59e0b` — tasks currently executing in an active wave.
+  - **Green (`done`)**: `fill:#dcfce7,stroke:#22c55e` — verified completed tasks with checked status.
+  Label task nodes with the task ID and a concise title; include every leaf and every declared dependency exactly once.
   `spec-execute` regenerates this diagram (fresh status colors) at the same points it refreshes
   the Execution Gantt — a checkpoint, an intentional return, or run completion — not after every
   single task, so the diagram stays live without a render-validate cycle on every checkbox flip.
@@ -139,8 +135,8 @@ home-directory path.
    workflow notes, and other process metadata that does not help a human execute the plan.
    Run `scripts/spec-nav.py <spec-dir> --write` before the final `spec-check.py` gate so every
    existing numbered artifact has current cross-links, then run `scripts/spec-check.py <spec-dir>
-   --emit-json` last so `04_tasks.json` is generated from the exact Markdown text — navigation
-   included — the user is about to approve.
+   --emit-json` last so `sidecars/04_tasks.json` is generated from the exact Markdown text — navigation
+   included — conforming to [`spec-driven/contracts/schemas/04_tasks.schema.json`](../spec-driven/contracts/schemas/04_tasks.schema.json).
    Then **gate — get approval:**
    > "Tasks written to `.specs/<slug>/04_tasks.md`. Review and approve, or request changes, before implementation."
    Revise until approved. Mark Tasks `approved` only after user acceptance; set Audit to
