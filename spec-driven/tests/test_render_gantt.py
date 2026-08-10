@@ -167,6 +167,26 @@ class RenderGanttTests(unittest.TestCase):
             self.assertIn("title Existing", execution_text)
             self.assertNotIn("title Replacement", execution_text)
 
+    def test_flowchart_injection_collapses_preexisting_duplicate_sections(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            tasks_md = Path(directory) / "04_tasks.md"
+            old = "## Stage and Dependency Overview\n\n```mermaid\nflowchart TD\n    old[Old]\n```"
+            tasks_md.write_text(
+                f"# Tasks\n\n{old}\n\nPreserve this text.\n\n{old}\n\n- [ ] 1. Task\n",
+                encoding="utf-8",
+            )
+
+            render_gantt.inject_flowchart_into_tasks_md(
+                tasks_md,
+                "```mermaid\nflowchart TD\n    new[New]\n```",
+            )
+
+            content = tasks_md.read_text(encoding="utf-8")
+            self.assertEqual(1, content.count("## Stage and Dependency Overview"))
+            self.assertEqual(1, content.count("flowchart TD"))
+            self.assertIn("Preserve this text.", content)
+            self.assertIn("- [ ] 1. Task", content)
+
     def test_flowchart_color_coding_standards(self) -> None:
         tasks_data = {
             "tasks": [

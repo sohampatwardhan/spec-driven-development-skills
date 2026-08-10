@@ -316,27 +316,24 @@ def inject_flowchart_into_tasks_md(tasks_md_path: Path, diagram: str) -> None:
         return
 
     content = tasks_md_path.read_text(encoding="utf-8")
-    heading = "## Stage and Dependency Overview"
+    pattern = r"(?ms)^##\s+Stage and Dependency Overview\s*\n\s*```mermaid\s*\nflowchart\b.*?```\s*"
+    # Remove every generated copy first. Replacing each match would preserve the duplicate count.
+    cleaned = re.sub(pattern, "", content)
+    cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip() + "\n"
+    replacement = f"## Stage and Dependency Overview\n\n{diagram}\n"
 
-    if heading in content:
-        pattern = r"(?ms)##\s+Stage and Dependency Overview\s*\n\s*```mermaid\s*\nflowchart\b.*?```"
-        replacement = f"## Stage and Dependency Overview\n\n{diagram}"
-        updated = re.sub(pattern, replacement, content)
-        if updated != content:
-            tasks_md_path.write_text(updated, encoding="utf-8")
-            return
-
-    # Insert under spec navigation or top heading
-    nav_end = content.find("<!-- spec-nav:end -->")
+    # Insert one canonical section under spec navigation or the document title.
+    nav_end = cleaned.find("<!-- spec-nav:end -->")
     if nav_end != -1:
         insert_idx = nav_end + len("<!-- spec-nav:end -->")
-        updated = content[:insert_idx] + f"\n\n## Stage and Dependency Overview\n\n{diagram}\n" + content[insert_idx:]
+        updated = cleaned[:insert_idx] + f"\n\n{replacement}" + cleaned[insert_idx:].lstrip("\n")
     else:
-        first_stage = content.find("## Stage 1")
-        if first_stage != -1:
-            updated = content[:first_stage] + f"## Stage and Dependency Overview\n\n{diagram}\n\n" + content[first_stage:]
+        title = re.match(r"^#\s+.*\n", cleaned)
+        if title:
+            insert_idx = title.end()
+            updated = cleaned[:insert_idx] + f"\n{replacement}\n" + cleaned[insert_idx:].lstrip("\n")
         else:
-            updated = content + f"\n\n## Stage and Dependency Overview\n\n{diagram}\n"
+            updated = replacement + "\n" + cleaned
 
     tasks_md_path.write_text(updated, encoding="utf-8")
 
