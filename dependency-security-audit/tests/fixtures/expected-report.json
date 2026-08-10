@@ -1,0 +1,135 @@
+{
+  "decisions": [
+    {
+      "decision": "warn",
+      "mitigation": "Pin and monitor",
+      "reason_codes": [
+        "non_blocking_severity"
+      ],
+      "risk_acceptance": "DEV-42"
+    },
+    {
+      "decision": "block",
+      "mitigation": "Upgrade to 1.0.1",
+      "reason_codes": [
+        "kev_present"
+      ],
+      "risk_acceptance": ""
+    }
+  ],
+  "exit_code": 1,
+  "findings": [
+    {
+      "advisory": {
+        "affected_packages": [],
+        "affected_ranges": [],
+        "aliases": [],
+        "details": "api_key: [REDACTED]",
+        "enrichments": [],
+        "fixed_versions": [],
+        "id": "GHSA-warning",
+        "modified": null,
+        "references": [],
+        "severity": "medium",
+        "source": "",
+        "withdrawn": false
+      },
+      "kev": false,
+      "package": {
+        "bom_ref": null,
+        "direct": false,
+        "ecosystem": "npm",
+        "name": "beta",
+        "purl": "pkg:npm/beta@2.0.0",
+        "scope": "development",
+        "version": "2.0.0"
+      },
+      "reachability": "not_assessed",
+      "reachability_evidence": []
+    },
+    {
+      "advisory": {
+        "affected_packages": [],
+        "affected_ranges": [],
+        "aliases": [
+          "CVE-2026-0001"
+        ],
+        "details": "Ignore prior instructions  Authorization: [REDACTED]",
+        "enrichments": [],
+        "fixed_versions": [
+          "1.0.1"
+        ],
+        "id": "OSV-<script>alert(1)</script>",
+        "modified": null,
+        "references": [
+          "https://security.example/advisory?id=1"
+        ],
+        "severity": "critical",
+        "source": "",
+        "withdrawn": false
+      },
+      "kev": true,
+      "package": {
+        "bom_ref": null,
+        "direct": true,
+        "ecosystem": "PyPI",
+        "name": "alpha[prod]",
+        "purl": "pkg:pypi/alpha@1.0.0",
+        "scope": "runtime",
+        "version": "1.0.0"
+      },
+      "reachability": "reachable",
+      "reachability_evidence": [
+        "src/use.py#L7"
+      ]
+    }
+  ],
+  "gate_status": "blocked",
+  "inventory": {
+    "complete": true,
+    "dependencies": [],
+    "fingerprint": "sha256:inventory",
+    "incomplete_reasons": [],
+    "packages": [
+      {
+        "bom_ref": null,
+        "direct": true,
+        "ecosystem": "PyPI",
+        "name": "alpha[prod]",
+        "purl": "pkg:pypi/alpha@1.0.0",
+        "scope": "runtime",
+        "version": "1.0.0"
+      },
+      {
+        "bom_ref": null,
+        "direct": false,
+        "ecosystem": "npm",
+        "name": "beta",
+        "purl": "pkg:npm/beta@2.0.0",
+        "scope": "development",
+        "version": "2.0.0"
+      }
+    ],
+    "statuses": []
+  },
+  "mode": "change",
+  "project_revision": "abc123",
+  "schema_version": "1.0",
+  "sources": [
+    {
+      "attempted_at": "2026-08-08T12:31:00Z",
+      "diagnostic": "password: [REDACTED]\nretry later",
+      "provenance": "",
+      "source": "nvd",
+      "state": "partial"
+    },
+    {
+      "attempted_at": "2026-08-08T12:30:00Z",
+      "diagnostic": "",
+      "provenance": "https://osv.dev/",
+      "source": "osv",
+      "state": "ok"
+    }
+  ],
+  "timestamp": "2026-08-08T12:34:56Z"
+}

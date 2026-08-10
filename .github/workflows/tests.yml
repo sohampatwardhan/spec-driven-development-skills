@@ -14,3 +14,7 @@ jobs:
       - run: pip install pytest pyyaml
       - run: python3 -m pytest tests/ -q
         working-directory: spec-driven
+      - run: python3 -m unittest discover -s tests -v
+        working-directory: dependency-security-audit
+        env:
+          PYTHONDONTWRITEBYTECODE: "1"

@@ -1,0 +1,6 @@
+{
+  "installed": [
+    {"metadata": {"name": "root-pkg", "version": "1.0.0", "requires_dist": ["child-pkg >= 2"]}, "requested": true},
+    {"metadata": {"name": "child-pkg", "version": "2.1.0"}, "requested": false}
+  ]
+}

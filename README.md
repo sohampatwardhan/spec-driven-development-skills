@@ -25,6 +25,7 @@ numbered requirement.
 | 6. Finish | `spec-finish` | Integration decision + final evidence | user chooses |
 | (automation) | `spec-hooks` | Host-native event-triggered automation | — |
 | (support) | `spec-debugging`, `spec-verification` | Root-cause fixes, evidence-backed completion claims | — |
+| (support) | `dependency-security-audit` | Deterministic OSV/GHSA/NVD/CISA-KEV evidence for a dependency change | — |
 
 ## What makes this deterministic, not just prose
 
@@ -54,10 +55,11 @@ numbered requirement.
 
 ```bash
 cd spec-driven && python3 -m pytest tests/ -q
+cd dependency-security-audit && PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -v
 ```
 
-One test gracefully skips unless `mermaid-skill` is installed alongside this family as a sibling
-skill (it exercises the deterministic Gantt-generation integration).
+One `spec-driven` test gracefully skips unless `mermaid-skill` is installed alongside this family
+as a sibling skill (it exercises the deterministic Gantt-generation integration).
 
 ## License
 

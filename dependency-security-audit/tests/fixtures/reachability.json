@@ -1,0 +1,69 @@
+{
+  "schema_version": "1",
+  "annotations": {
+    "pkg:pypi/reachable@1.0.0|OSV-REACH": {
+      "status": "reachable",
+      "method": "runtime_loading",
+      "evidence": ["evidence/runtime-trace.json#event-42"],
+      "producer": "integration-tracer",
+      "timestamp": "2026-08-08T12:00:00Z"
+    },
+    "pkg:npm/unreachable@2.0.0|GHSA-UNREACH": {
+      "status": "unreachable",
+      "method": "delivered_artifact_exclusion",
+      "evidence": ["evidence/bundle-manifest.json#excluded-components"],
+      "producer": "release-bundle-analyzer",
+      "timestamp": "2026-08-08T12:01:00Z"
+    },
+    "pkg:cargo/unsupported@3.0.0|CVE-UNSUPPORTED": {
+      "status": "unreachable",
+      "method": "no_direct_import",
+      "evidence": ["evidence/import-search.txt"],
+      "producer": "source-scanner",
+      "timestamp": "2026-08-08T12:02:00Z"
+    },
+    "pkg:golang/no-proof@v1.0.0|GO-NO-PROOF": {
+      "status": "unreachable",
+      "method": "call_graph_exclusion",
+      "evidence": [],
+      "producer": "call-graph-analyzer",
+      "timestamp": "2026-08-08T12:03:00Z"
+    },
+    "pkg:pypi/unknown@1.0.0|PYSEC-UNKNOWN": {
+      "status": "unknown",
+      "method": "inconclusive_analysis",
+      "evidence": ["evidence/analysis.txt"],
+      "producer": "security-reviewer",
+      "timestamp": "2026-08-08T12:04:00Z"
+    },
+    "pkg:npm/not-assessed@1.0.0|GHSA-NOT-ASSESSED": {
+      "status": "not_assessed",
+      "method": "not_assessed",
+      "evidence": [],
+      "producer": "audit-controller",
+      "timestamp": "2026-08-08T12:05:00Z"
+    },
+    "pkg:pypi/conflict@1.0.0|OSV-CONFLICT": [
+      {
+        "status": "unreachable",
+        "method": "call_graph_exclusion",
+        "evidence": ["evidence/static-call-graph.json#excluded"],
+        "producer": "static-analyzer",
+        "timestamp": "2026-08-08T12:06:00Z"
+      },
+      {
+        "status": "reachable",
+        "method": "direct_call",
+        "evidence": ["evidence/runtime-trace.json#direct-call"],
+        "producer": "runtime-tracer",
+        "timestamp": "2026-08-08T12:07:00Z"
+      }
+    ],
+    "pkg:pypi/malformed@1.0.0|OSV-MALFORMED": {
+      "status": "reachable",
+      "method": "direct_call",
+      "evidence": ["evidence/runtime-trace.json#malformed"],
+      "timestamp": "not-a-timestamp"
+    }
+  }
+}

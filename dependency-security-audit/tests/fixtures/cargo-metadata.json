@@ -1,0 +1,17 @@
+{
+  "packages": [
+    {"id": "path+file:///project#app@0.1.0", "name": "app", "version": "0.1.0", "dependencies": [
+      {"name": "runtime-crate", "kind": null}, {"name": "dev-crate", "kind": "dev"}
+    ]},
+    {"id": "registry+https://github.com/rust-lang/crates.io-index#runtime-crate@1.2.3", "name": "runtime-crate", "version": "1.2.3", "dependencies": []},
+    {"id": "registry+https://github.com/rust-lang/crates.io-index#dev-crate@2.3.4", "name": "dev-crate", "version": "2.3.4", "dependencies": []}
+  ],
+  "resolve": {"root": "path+file:///project#app@0.1.0", "nodes": [
+    {"id": "path+file:///project#app@0.1.0", "dependencies": ["registry+https://github.com/rust-lang/crates.io-index#runtime-crate@1.2.3", "registry+https://github.com/rust-lang/crates.io-index#dev-crate@2.3.4"], "deps": [
+      {"name": "runtime-crate", "pkg": "registry+https://github.com/rust-lang/crates.io-index#runtime-crate@1.2.3", "dep_kinds": [{"kind": null, "target": null}]},
+      {"name": "dev-crate", "pkg": "registry+https://github.com/rust-lang/crates.io-index#dev-crate@2.3.4", "dep_kinds": [{"kind": "dev", "target": null}]}
+    ]},
+    {"id": "registry+https://github.com/rust-lang/crates.io-index#runtime-crate@1.2.3", "dependencies": []},
+    {"id": "registry+https://github.com/rust-lang/crates.io-index#dev-crate@2.3.4", "dependencies": []}
+  ]}
+}

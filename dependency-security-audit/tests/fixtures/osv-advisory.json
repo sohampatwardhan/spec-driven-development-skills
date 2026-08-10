@@ -1,0 +1,1 @@
+{"id":"OSV-ONE","aliases":["CVE-2025-0001"],"affected":[{"package":{"ecosystem":"PyPI","name":"purl-package","purl":"pkg:pypi/purl-package"},"ranges":[{"type":"ECOSYSTEM","events":[{"introduced":"0"},{"fixed":"1.2.4"}]}]}]}

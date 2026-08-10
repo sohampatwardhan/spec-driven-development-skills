@@ -1,0 +1,4 @@
+interface:
+  display_name: "Dependency Security Audit"
+  short_description: "Audit exact dependency snapshots and advisories"
+  default_prompt: "Use $dependency-security-audit to audit this project dependency snapshot in the appropriate change, main, or release mode."
