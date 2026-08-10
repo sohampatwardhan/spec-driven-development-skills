@@ -1,0 +1,224 @@
+schema_version: 1
+family: spec-driven
+family_version: 5
+purpose: Turn approved product intent into traceable, verified implementation evidence.
+
+invariants:
+  - No hidden memory dependency; declared inputs and resources are sufficient.
+  - EARS criteria remain the behavioral acceptance boundary.
+  - Writes stay within declared paths and approval boundaries.
+  - Completion requires fresh deterministic evidence.
+
+defaults:
+  structured_output: true
+  max_steps: 12
+  max_active_minutes: 20
+  session_handoff_minutes: 60
+  context_policy: cited-excerpts-only
+  network: false
+
+capability_classes:
+  repository_read: Read declared project files and source evidence.
+  repository_write: Edit declared project and spec paths.
+  command_run: Run declared validation commands.
+  documentation_lookup: Query current official documentation.
+  dependency_audit: Produce and review dependency-security evidence.
+  delegate: Run a bounded role contract in isolated context.
+
+# Deterministic model routing. `scripts/model-router.py` reads this block; no reference
+# document or skill body should hard-code a vendor model name. Keys are stable field names
+# for machine parsing; do not rename without a family_version bump.
+#
+# capability_tier and reasoning_level are two INDEPENDENT axes, not one combined rank:
+# capability_tier is which model (base capability/speed/cost); reasoning_level is how much
+# deliberation that chosen model spends on this one task. Outcome quality is roughly
+# capability x reasoning x task clarity — a `balanced` model at `high` reasoning can beat a
+# `frontier` model at `low` reasoning on a well-specified but effortful task. Resolve both from
+# the same declared inputs (task_category, declared_risk) but through separate tables below, and
+# never fold them into a single tier name.
+capability_tiers:
+  economical: Small mechanical work; single narrow fact; low ambiguity; cheap retries acceptable.
+  balanced: Normal multi-file implementation, traceability review, or routine verification.
+  frontier: Architecture, adversarial/security review, high-risk integration, escalated fixes.
+
+reasoning_levels:
+  low: Explicit, local, easily verified — formatting, small lookups, boilerplate.
+  medium: Normal default — ordinary feature work, multi-file changes, routine debugging.
+  high: Ambiguity, non-obvious causality, or meaningful failure risk — complex bugs, design tradeoffs, code review.
+  extra_high: System-wide, irreversible, security-sensitive, or expensive to get wrong — architecture, migrations, auth, concurrency.
+
+task_categories:
+  quick_lookup: {default_tier: economical, default_reasoning: low, escalation_signal: "answer requires cross-file synthesis or judgment"}
+  code_analysis: {default_tier: balanced, default_reasoning: medium, escalation_signal: "ambiguous ownership, hidden coupling, or unclear impact"}
+  heavy_reasoning: {default_tier: frontier, default_reasoning: high, escalation_signal: "never downgrade below balanced tier or medium reasoning"}
+  review: {default_tier: balanced, default_reasoning: medium, escalation_signal: "adversarial/security/high-risk lens requested"}
+
+model_routing:
+  # Deterministic default per tier. The runtime adapter resolves a tier to an available model;
+  # this table names the safe default for this environment (Claude Code) and the
+  # lightweight-model-friendly floor. Override path: an explicit user- or policy-specified model
+  # always wins; record the substitution reason. Other vendors' equivalent tiers, for
+  # cross-tool/runtime portability, are documented in references/model-routing.md rather than
+  # hard-coded here.
+  defaults:
+    economical: claude-haiku-4-5-20251001
+    balanced: claude-sonnet-5
+    frontier: claude-opus-5
+  override_policy:
+    - An explicit user- or project-policy-named model takes precedence over any computed tier.
+    - If the requested tier's model is unavailable, escalate to the next stronger available tier
+      and record the substitution; never silently downgrade or invent a model ID.
+    - heavy_reasoning tasks never resolve below the balanced tier even under override.
+  selection_inputs: [task_category, declared_risk, requested_override]
+  selection_order: [requested_override, risk_escalation, task_category_default]
+
+reasoning_routing:
+  # Deterministic default per task_category, escalated by declared_risk exactly like
+  # model_routing's tier — resolved independently, since capability tier and reasoning level are
+  # separate axes that can diverge (e.g. balanced+high, or frontier+low).
+  override_policy:
+    - An explicit user- or project-policy-named reasoning level takes precedence over any
+      computed default; record the substitution reason.
+    - Risk escalation only ever raises reasoning level, never lowers it.
+    - heavy_reasoning tasks never resolve below high reasoning even under override.
+  selection_inputs: [task_category, declared_risk, requested_reasoning_override]
+  selection_order: [requested_reasoning_override, risk_escalation, task_category_default]
+
+# Deterministic delegation fan-out: how many independent subagents, not which model.
+# `scripts/fanout.py` reads the `fanout` block; no skill body should hard-code a reviewer
+# count or fix-round cap. `delegation_depth` is judgment criteria for a human/agent to pick
+# one of three depths from the task/wave at hand (mirrors how `declared_risk` feeds
+# model_routing) — the same three depths spec-execute's preflight and spec-audit's review
+# already use, unified here so both read one table instead of maintaining separate prose.
+delegation_depth:
+  quick: >-
+    At most 3 files; no public contract, migration, dependency resolution, security, privacy,
+    production, destructive operation, or high-risk task; not a dependency of 3+ other tasks.
+  medium: >-
+    Ordinary multi-file work, one moderate-risk integration boundary, or a task that is a
+    dependency of 3+ other tasks (blast radius promotes depth even when file count is small).
+  thorough: >-
+    Authentication/authorization, sensitive data, migration, deployment, destructive
+    operations, dependency resolution, public compatibility, a protected-main/release
+    delivery gate, or an explicit high-risk marker.
+
+fanout:
+  # reviewer_tier/reviewer_reasoning are the two independent axes for the reviewer(s) this depth
+  # resolves — same two-axis principle as model_routing/reasoning_routing above.
+  quick: {reviewer_count: 1, reviewer_tier: economical, reviewer_reasoning: low, self_repair_rounds: 1}
+  medium: {reviewer_count: 1, reviewer_tier: balanced, reviewer_reasoning: medium, self_repair_rounds: 2}
+  thorough: {reviewer_count: 2, reviewer_tier: balanced, reviewer_reasoning: high, self_repair_rounds: 2}
+  escalation:
+    - A protected-main/release delivery gate, or a user-requested Thorough audit, raises the
+      thorough row to reviewer_count 3, adding a third reviewer at the frontier tier and
+      extra_high reasoning (the adversarial lens); the first two reviewers keep thorough's base
+      tier/reasoning.
+    - Escalation only ever adds reviewers or raises a reviewer's tier/reasoning, never removes
+      or lowers one.
+  selection_inputs: [files_touched, risk, dependency_delivery, dependents_count, explicit_markers]
+
+roles:
+  explorer:
+    capabilities: [repository_read]
+    side_effects: none
+    output: evidence_report
+  implementer:
+    capabilities: [repository_read, repository_write, command_run]
+    side_effects: bounded_repository_write
+    output: task_report
+  reviewer:
+    capabilities: [repository_read, command_run]
+    side_effects: none
+    output: review_verdict
+  verifier:
+    capabilities: [repository_read, command_run]
+    side_effects: command_execution
+    output: verification_verdict
+
+outputs:
+  evidence_report:
+    required: [status, evidence, findings, context_requests]
+  task_report:
+    required: [status, task_id, capability_tier, resolved_model, reasoning_level, changed_files, criteria, verification, findings]
+  review_verdict:
+    required: [status, scope, capability_tier, resolved_model, reasoning_level, findings, evidence]
+  verification_verdict:
+    required: [status, criteria, commands, exits, evidence]
+
+skills:
+  spec-discovery:
+    intent: Approve a problem boundary and chosen approach.
+    inputs: [user_intent, project_context]
+    resources: [steering, relevant_source]
+    output: 01_discovery.md
+    capabilities: [repository_read, repository_write]
+    side_effects: spec_write
+    approval: user
+  spec-requirements:
+    intent: Define observable EARS acceptance criteria.
+    inputs: [approved_discovery]
+    resources: [steering, ears_reference]
+    output: 02_requirements.md
+    capabilities: [repository_read, repository_write]
+    side_effects: spec_write
+    approval: user
+  spec-design:
+    intent: Define a feasible design and correctness properties.
+    inputs: [approved_discovery, approved_requirements]
+    resources: [relevant_source, current_technology_evidence, dependency_policy]
+    output: 03_design.md
+    capabilities: [repository_read, repository_write, documentation_lookup, dependency_audit]
+    side_effects: spec_and_audit_write
+    approval: user
+  spec-tasks:
+    intent: Produce a dependency-ordered executable task graph.
+    inputs: [approved_design, approved_requirements]
+    resources: [task_template, dependency_policy]
+    output: 04_tasks.md
+    capabilities: [repository_read, repository_write, command_run]
+    side_effects: spec_write
+    approval: user
+  spec-audit:
+    intent: Find high-confidence defects in approved planning artifacts.
+    inputs: [artifact_digest, audit_depth]
+    resources: [cited_artifact_excerpts, relevant_source]
+    output: audit_report
+    capabilities: [repository_read, command_run, delegate]
+    side_effects: state_write
+    approval: none
+  spec-execute:
+    intent: Implement ready tasks and preserve verification evidence.
+    inputs: [approved_artifact_digest, ready_task_contracts]
+    resources: [bounded_task_context, applicable_policies]
+    output: implementation_and_05_execution.md
+    capabilities: [repository_read, repository_write, command_run, documentation_lookup, dependency_audit, delegate]
+    side_effects: bounded_repository_write
+    approval: checkpoints_and_boundary_crossings
+  spec-verification:
+    intent: Decide a completion claim from fresh evidence.
+    inputs: [task_contract, current_revision]
+    resources: [baseline, changed_files]
+    output: verification_verdict
+    capabilities: [repository_read, command_run]
+    side_effects: command_execution
+    approval: none
+  spec-finish:
+    intent: Offer explicit integration choices after final verification.
+    inputs: [complete_execution_ledger, current_revision]
+    resources: [repository_state]
+    output: integration_decision
+    capabilities: [repository_read, command_run]
+    side_effects: user_selected_only
+    approval: user
+
+runtime_adapters:
+  mcp:
+    resources: declared resources and artifact excerpts
+    tools: capability classes with side effects
+    prompts: orchestration and output contracts
+  claude:
+    roles: isolated subagents with model and tool allowlists
+    context: bounded envelope; use forked context when beneficial
+  openai:
+    roles: agents-as-tools or handoffs with filtered history
+    guardrails: validate every intermediate structured return
