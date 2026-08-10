@@ -251,6 +251,9 @@ attempt-state, or checklist update:
    existing flowchart in `04_tasks.md` and leave the checkpoint-only Execution Gantt unchanged.
 4. Render-validate the exact generated flowchart with the `mermaid` skill, then confirm there is
    exactly one `## Stage and Dependency Overview` heading and one flowchart block.
+5. Run `scripts/spec-check.py <spec-dir> --emit-json` once more after injection so the sidecars'
+   source hashes include the generated Markdown change. Do not render again in this cycle; finish
+   with `spec-check.py <spec-dir> --ready --format json` and require `ok: true`.
 
 Whenever the checkpoint-only Gantt is regenerated, also confirm `05_execution.md` contains exactly
 one Run Intervals table, one Task Attempt Intervals table, and one Execution Gantt heading/block.
