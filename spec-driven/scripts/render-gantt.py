@@ -104,14 +104,19 @@ def build_gantt_from_execution_data(data: Dict[str, Any], feature_slug: str = "F
         start_str = attempt.get("started_utc", "")
         stop_str = attempt.get("stopped_utc", "")
         
-        # Parse ISO timestamps
+        # Parse ISO timestamps. Active attempts intentionally carry pending stop/elapsed values;
+        # render them as a deterministic one-second marker until the ledger closes the interval.
         try:
             start_dt = datetime.fromisoformat(start_str.replace("Z", "+00:00"))
-            stop_dt = datetime.fromisoformat(stop_str.replace("Z", "+00:00"))
+            if outcome == "active" and stop_str == "pending":
+                stop_dt = start_dt + timedelta(seconds=1)
+            else:
+                stop_dt = datetime.fromisoformat(stop_str.replace("Z", "+00:00"))
         except Exception:
             # Fallback to synthetic non-zero timestamps if format missing
             start_dt = datetime(2026, 8, 10, 12, 0, 0, tzinfo=timezone.utc)
-            stop_dt = start_dt + timedelta(seconds=int(attempt.get("elapsed_seconds", 60)))
+            elapsed = attempt.get("elapsed_seconds", 60)
+            stop_dt = start_dt + timedelta(seconds=int(elapsed) if str(elapsed).isdigit() else 60)
             
         # Handle 0-second tasks safely (ensure end is at least start + 1s for Mermaid rendering)
         if stop_dt <= start_dt:
@@ -253,6 +258,25 @@ def build_flowchart_from_tasks_data(
     return "\n".join(lines)
 
 
+def task_state_ids_from_execution_data(data: Dict[str, Any]) -> Tuple[List[str], List[str]]:
+    """Return active/failed task IDs from each task's latest recorded attempt."""
+    latest: Dict[str, Dict[str, Any]] = {}
+    for attempt in data.get("task_attempts", []):
+        task_id = str(attempt.get("task", "")).strip()
+        if not task_id:
+            continue
+        current = latest.get(task_id)
+        order = (int(attempt.get("attempt", 0)), str(attempt.get("started_utc", "")))
+        current_order = (
+            int(current.get("attempt", 0)), str(current.get("started_utc", ""))
+        ) if current else (-1, "")
+        if order >= current_order:
+            latest[task_id] = attempt
+    active = sorted(task_id for task_id, row in latest.items() if row.get("outcome") == "active")
+    failed = sorted(task_id for task_id, row in latest.items() if row.get("outcome") == "failed")
+    return active, failed
+
+
 def inject_gantt_into_execution_md(execution_md_path: Path, diagram: str) -> None:
     """Inject or replace ### Execution Gantt in 05_execution.md idempotently without duplication.
 
@@ -317,11 +341,34 @@ def inject_flowchart_into_tasks_md(tasks_md_path: Path, diagram: str) -> None:
     tasks_md_path.write_text(updated, encoding="utf-8")
 
 
+def write_generated_diagrams(
+    spec_dir: Path,
+    gantt_diagram: str,
+    flowchart_diagram: str,
+    *,
+    flowchart_only: bool = False,
+) -> None:
+    """Replace generated diagram sections without creating duplicate Markdown blocks."""
+    if not flowchart_only:
+        exec_md = spec_dir / "05_execution.md"
+        inject_gantt_into_execution_md(exec_md, gantt_diagram)
+        print(f"Injected validated Mermaid Gantt into {exec_md}")
+
+    if flowchart_diagram:
+        tasks_md = spec_dir / "04_tasks.md"
+        inject_flowchart_into_tasks_md(tasks_md, flowchart_diagram)
+        print(f"Injected color-coded Mermaid Flowchart into {tasks_md}")
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Deterministic Mermaid Gantt & Flowchart Generator")
     parser.add_argument("spec_dir", type=Path, help="Path to spec directory")
-    parser.add_argument("--write", action="store_true", help="Inject into 05_execution.md and 04_tasks.md")
-    parser.add_argument("--flowchart-only", action="store_true", help="Output only the Stage and Dependency flowchart")
+    parser.add_argument("--write", action="store_true", help="Replace generated diagram sections in Markdown")
+    parser.add_argument(
+        "--flowchart-only",
+        action="store_true",
+        help="Output only the task flowchart; with --write, leave the execution Gantt unchanged",
+    )
     args = parser.parse_args()
     
     sidecars_dir = args.spec_dir / "sidecars"
@@ -347,17 +394,21 @@ def main() -> None:
     flowchart_diagram = ""
     if tasks_json_path.is_file():
         tasks_data = json.loads(tasks_json_path.read_text(encoding="utf-8"))
-        flowchart_diagram = build_flowchart_from_tasks_data(tasks_data, feature_slug=args.spec_dir.name)
+        active_task_ids, failed_task_ids = task_state_ids_from_execution_data(data)
+        flowchart_diagram = build_flowchart_from_tasks_data(
+            tasks_data,
+            feature_slug=args.spec_dir.name,
+            active_task_ids=active_task_ids,
+            failed_task_ids=failed_task_ids,
+        )
     
     if args.write:
-        exec_md = args.spec_dir / "05_execution.md"
-        inject_gantt_into_execution_md(exec_md, gantt_diagram)
-        print(f"Injected validated Mermaid Gantt into {exec_md}")
-
-        if flowchart_diagram:
-            tasks_md = args.spec_dir / "04_tasks.md"
-            inject_flowchart_into_tasks_md(tasks_md, flowchart_diagram)
-            print(f"Injected color-coded Mermaid Flowchart into {tasks_md}")
+        write_generated_diagrams(
+            args.spec_dir,
+            gantt_diagram,
+            flowchart_diagram,
+            flowchart_only=args.flowchart_only,
+        )
     elif args.flowchart_only:
         print(flowchart_diagram)
     else:

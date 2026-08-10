@@ -3,52 +3,55 @@
   "agents": {
     "claude": {
       "binary": "claude",
-      "unattended_flags": ["--dangerously-skip-permissions"],
+      "unattended_flags": ["--permission-mode", "auto"],
       "model_flag": "--model",
       "effort_flag": "--effort",
+      "effort_map": {"extra_high": "xhigh"},
       "role_overrides": {
         "implementer": {
-          "unattended_flags": ["--dangerously-skip-permissions"]
+          "unattended_flags": ["--permission-mode", "auto"]
         },
         "reviewer": {
-          "unattended_flags": ["--permission-prompt-tool-allowlist", "View,Read,Grep,Glob,Search"]
+          "unattended_flags": ["--permission-mode", "plan", "--tools", "Read,Grep,Glob"]
         },
         "explorer": {
-          "unattended_flags": ["--permission-prompt-tool-allowlist", "View,Read,Grep,Glob,Search"]
+          "unattended_flags": ["--permission-mode", "plan", "--tools", "Read,Grep,Glob"]
         }
       }
     },
     "codex": {
       "binary": "codex",
-      "unattended_flags": ["--full-auto", "-y"],
+      "unattended_flags": ["--approve-for-me"],
       "model_flag": "--model",
       "effort_flag": "-c model_reasoning_effort=",
+      "effort_map": {"extra_high": "xhigh"},
       "role_overrides": {
         "implementer": {
-          "unattended_flags": ["--full-auto"]
+          "unattended_flags": ["--approve-for-me"]
         },
         "reviewer": {
-          "unattended_flags": ["--sandbox", "read-only"]
+          "unattended_flags": ["--sandbox", "read-only", "--ask-for-approval", "never"]
         },
         "explorer": {
-          "unattended_flags": ["--sandbox", "read-only"]
+          "unattended_flags": ["--sandbox", "read-only", "--ask-for-approval", "never"]
         }
       }
     },
     "agy": {
       "binary": "agy",
-      "unattended_flags": ["--yolo", "--auto-approve"],
+      "unattended_flags": ["--dangerously-skip-permissions"],
       "model_flag": "--model",
-      "effort_flag": "--thinking",
+      "effort_flag": "--effort",
+      "effort_map": {"extra_high": "high"},
       "role_overrides": {
         "implementer": {
-          "unattended_flags": ["--yolo", "--auto-approve"]
+          "unattended_flags": ["--dangerously-skip-permissions"]
         },
         "reviewer": {
-          "unattended_flags": ["--read-only"]
+          "unattended_flags": ["--mode", "plan", "--sandbox"]
         },
         "explorer": {
-          "unattended_flags": ["--read-only"]
+          "unattended_flags": ["--mode", "plan", "--sandbox"]
         }
       }
     },

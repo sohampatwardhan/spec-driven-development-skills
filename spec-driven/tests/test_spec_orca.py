@@ -1,6 +1,5 @@
 import importlib.util
 import json
-import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -19,169 +18,189 @@ class SpecOrcaTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp_dir = tempfile.TemporaryDirectory()
         self.spec_dir = Path(self.temp_dir.name) / ".specs" / "test-feature"
-        self.spec_dir.mkdir(parents=True)
-        self.sidecars_dir = self.spec_dir / "sidecars"
-        self.sidecars_dir.mkdir(parents=True)
+        (self.spec_dir / "sidecars").mkdir(parents=True)
 
     def tearDown(self) -> None:
         self.temp_dir.cleanup()
 
-    def _write_tasks_sidecar(self, tasks_data: dict) -> None:
-        tasks_file = self.sidecars_dir / "04_tasks.json"
-        tasks_file.write_text(json.dumps(tasks_data, indent=2), encoding="utf-8")
-
-    def test_load_agent_profiles_contains_unattended_flags(self) -> None:
-        profiles = spec_orca.load_agent_profiles()
-        self.assertIn("agents", profiles)
-        agents = profiles["agents"]
-        self.assertIn("claude", agents)
-        self.assertIn("--dangerously-skip-permissions", agents["claude"]["unattended_flags"])
-        self.assertIn("codex", agents)
-        self.assertIn("--full-auto", agents["codex"]["unattended_flags"])
-        self.assertIn("agy", agents)
-        self.assertIn("--yolo", agents["agy"]["unattended_flags"])
-
-    def test_sync_spec_to_orca_creates_run_and_gates(self) -> None:
-        tasks_payload = {
+    def _write_tasks(self, tasks: list[dict], ready: list[str]) -> None:
+        payload = {
             "schema_version": 1,
-            "tasks": [
-                {
-                    "id": "1.1",
-                    "title": "Task One",
-                    "checked": False,
-                    "stage": 1,
-                    "depends_on": [],
-                    "task_category": "core_logic",
-                    "capability_tier": "complex_reasoning",
-                    "delegation": "parallel-safe"
-                },
-                {
-                    "id": "1.2",
-                    "title": "Checkpoint: verify milestone",
-                    "checked": False,
-                    "stage": 1,
-                    "depends_on": ["1.1"],
-                    "task_category": "core_logic",
-                    "capability_tier": "complex_reasoning",
-                    "delegation": "sequential subagent"
-                }
-            ],
-            "concurrency": {
-                "active_stage": 1,
-                "ready": ["1.1"],
-                "parallel_candidates": ["1.1"],
-                "serial_candidates": [],
-                "blocked": {"1.2": ["1.1"]}
-            }
+            "tasks": tasks,
+            "concurrency": {"active_stage": 1, "ready": ready},
         }
-        self._write_tasks_sidecar(tasks_payload)
+        (self.spec_dir / "sidecars" / "04_tasks.json").write_text(
+            json.dumps(payload), encoding="utf-8"
+        )
 
-        run_state = spec_orca.sync_spec_to_orca(self.spec_dir, run_id="run-custom-123")
-        self.assertEqual("run-custom-123", run_state["run_id"])
-        self.assertIn("1.1", run_state["tasks_map"])
-        self.assertIn("1.2", run_state["tasks_map"])
-        self.assertEqual(1, len(run_state["decision_gates"]))
-        self.assertEqual("gate-1.2", run_state["decision_gates"][0]["gate_id"])
-
-        sidecar_file = self.sidecars_dir / "orca_run.json"
-        self.assertTrue(sidecar_file.is_file())
-        disk_data = json.loads(sidecar_file.read_text(encoding="utf-8"))
-        self.assertEqual("run-custom-123", disk_data["run_id"])
-
-    def test_get_ready_dispatches_filters_by_dependencies(self) -> None:
-        tasks_payload = {
-            "schema_version": 1,
-            "tasks": [
-                {
-                    "id": "1.1",
-                    "title": "Implement model",
-                    "checked": False,
-                    "stage": 1,
-                    "depends_on": [],
-                    "task_category": "core_logic",
-                    "capability_tier": "complex_reasoning",
-                    "delegation": "parallel-safe",
-                    "files": ["src/model.py"],
-                    "orca_dispatch": {"agent": "claude"}
-                },
-                {
-                    "id": "1.2",
-                    "title": "Implement CLI wrapper",
-                    "checked": False,
-                    "stage": 1,
-                    "depends_on": ["1.1"],
-                    "task_category": "core_logic",
-                    "capability_tier": "complex_reasoning",
-                    "delegation": "parallel-safe",
-                    "files": ["src/cli.py"],
-                    "orca_dispatch": {"agent": "claude"}
-                }
-            ],
-            "concurrency": {
-                "active_stage": 1,
-                "ready": ["1.1", "1.2"],
-                "parallel_candidates": ["1.1"],
-                "serial_candidates": [],
-                "blocked": {"1.2": ["1.1"]}
-            }
+    @staticmethod
+    def _task(task_id: str, **overrides) -> dict:
+        task = {
+            "id": task_id,
+            "title": f"Task {task_id}",
+            "checked": False,
+            "stage": 1,
+            "depends_on": [],
+            "files": [f"src/{task_id}.ts"],
+            "requirements": ["1.1"],
+            "verification": "tests pass",
+            "interfaces": "Consumes parser; produces a rendered view.",
+            "dependency_resolution": "none",
+            "dependency_delivery": "none",
+            "risk": "medium; visible behavior",
+            "documentation": "Update user-facing behavior notes.",
+            "delegation": "parallel-safe",
+            "task_category": "code_analysis",
+            "resolved_model": "claude-sonnet-5",
+            "reasoning_level": "medium",
         }
-        self._write_tasks_sidecar(tasks_payload)
+        task.update(overrides)
+        return task
 
-        dispatches = spec_orca.get_ready_dispatches(self.spec_dir)
-        # 1.2 is blocked because 1.1 is unchecked
-        self.assertEqual(1, len(dispatches))
-        self.assertEqual("1.1", dispatches[0]["task_id"])
-        self.assertEqual("new-child", dispatches[0]["worktree_mode"])
-        self.assertIn("--dangerously-skip-permissions", dispatches[0]["unattended_flags"])
+    def test_profiles_match_current_installed_cli_flags(self) -> None:
+        agents = spec_orca.load_agent_profiles()["agents"]
+        self.assertEqual(["--permission-mode", "auto"], agents["claude"]["unattended_flags"])
+        self.assertEqual(["--approve-for-me"], agents["codex"]["unattended_flags"])
+        self.assertEqual(
+            ["--dangerously-skip-permissions"], agents["agy"]["unattended_flags"]
+        )
 
-        # When 1.1 is checked, 1.2 becomes eligible
-        tasks_payload["tasks"][0]["checked"] = True
-        self._write_tasks_sidecar(tasks_payload)
+    def test_receipt_value_prefers_specific_nested_identifier_over_root_id(self) -> None:
+        receipt = {"id": "local", "result": {"runId": "run_real"}}
+        self.assertEqual("run_real", spec_orca.receipt_value(receipt, "runId", "id"))
 
-        dispatches = spec_orca.get_ready_dispatches(self.spec_dir)
-        self.assertEqual(1, len(dispatches))
-        self.assertEqual("1.2", dispatches[0]["task_id"])
+    def test_sync_uses_real_receipts_dependencies_parents_and_gate(self) -> None:
+        tasks = [
+            self._task("1.1"),
+            self._task(
+                "1.2",
+                title="Checkpoint: verify milestone",
+                depends_on=["1.1"],
+            ),
+        ]
+        self._write_tasks(tasks, ["1.1"])
 
-    def test_budget_and_quota_inspection_and_down_tiering(self) -> None:
-        # Default ok status
-        status = spec_orca.check_budget_and_quota()
-        self.assertEqual("ok", status["status"])
+        def fake_orca(args, timeout=60):
+            if args[1] == "run-create":
+                return {"id": "local", "result": {"runId": "run_real"}}
+            if args[1] == "task-create":
+                title = args[args.index("--task-title") + 1]
+                return {"result": {"taskId": {"Stage 1": "task_stage", "1.1 Task 1.1": "task_one", "1.2 Checkpoint: verify milestone": "task_two"}[title]}}
+            if args[1] == "gate-create":
+                return {"result": {"gateId": "gate_real"}}
+            return {"ok": True}
 
-        # Constrained budget causes down-tiering of lightweight categories
-        constrained_status = {"status": "constrained", "remaining_usd": 2.5, "cooldown_sec": 0, "provider": "anthropic"}
-        model, effort = spec_orca.resolve_model_with_budget("code_analysis", "complex_reasoning", constrained_status)
-        self.assertEqual("gemini-2.5-flash", model)
-        self.assertEqual("low", effort)
+        with patch.object(spec_orca, "run_orca_json", side_effect=fake_orca) as mocked:
+            state = spec_orca.sync_spec_to_orca(self.spec_dir)
 
-        # Normal status preserves balanced/pro model
-        model_normal, effort_normal = spec_orca.resolve_model_with_budget("code_analysis", "complex_reasoning", status)
-        self.assertEqual("gemini-2.5-pro", model_normal)
+        self.assertEqual("run_real", state["run_id"])
+        self.assertEqual({"1.1": "task_one", "1.2": "task_two"}, state["tasks_map"])
+        self.assertEqual("task_stage", state["stage_tasks_map"]["1"])
+        self.assertEqual("gate_real", state["decision_gates"][0]["gate_id"])
+        leaf_two_call = next(
+            item.args[0]
+            for item in mocked.call_args_list
+            if "--task-title" in item.args[0]
+            and item.args[0][item.args[0].index("--task-title") + 1].startswith("1.2 ")
+        )
+        self.assertEqual('["task_one"]', leaf_two_call[leaf_two_call.index("--deps") + 1])
+        self.assertEqual("task_stage", leaf_two_call[leaf_two_call.index("--parent") + 1])
+        task_spec = leaf_two_call[leaf_two_call.index("--spec") + 1]
+        for expected in (
+            "Files: src/1.2.ts",
+            "Dependencies: 1.1",
+            "Requirements: 1.1",
+            "Interfaces: Consumes parser; produces a rendered view.",
+            "Dependency resolution: none",
+            "Dependency delivery: none",
+            "Risk: medium; visible behavior",
+            "Documentation: Update user-facing behavior notes.",
+            "Verification: tests pass",
+            "Resolved model: claude-sonnet-5",
+            "Reasoning level: medium",
+            "Execution contract:",
+        ):
+            self.assertIn(expected, task_spec)
 
-    def test_budget_exhaustion_defers_execution(self) -> None:
-        tasks_payload = {
-            "schema_version": 1,
-            "tasks": [
-                {
-                    "id": "1.1",
-                    "title": "Task One",
-                    "checked": False,
-                    "stage": 1,
-                    "depends_on": [],
-                    "task_category": "core_logic",
-                    "capability_tier": "complex_reasoning",
-                    "delegation": "parallel-safe"
-                }
-            ],
-            "concurrency": {
-                "active_stage": 1,
-                "ready": ["1.1"]
-            }
-        }
-        self._write_tasks_sidecar(tasks_payload)
+    def test_sync_reuses_persisted_run_without_duplicate_task_creation(self) -> None:
+        self._write_tasks([self._task("1.1")], ["1.1"])
+        state = spec_orca._new_state("run_existing", self.spec_dir.name)
+        state["stage_tasks_map"] = {"1": "stage_existing"}
+        state["tasks_map"] = {"1.1": "task_existing"}
+        spec_orca.save_run_state(self.spec_dir, state)
+        with patch.object(spec_orca, "run_orca_json", return_value={"ok": True}) as mocked:
+            spec_orca.sync_spec_to_orca(self.spec_dir)
+        self.assertEqual(
+            ["orchestration", "run-use", "--id", "run_existing"], mocked.call_args_list[0].args[0]
+        )
+        self.assertFalse(any("task-create" in item.args[0] for item in mocked.call_args_list))
 
-        with patch.dict(os.environ, {"ORCA_BUDGET_REMAINING_USD": "0.0"}):
-            dispatches = spec_orca.get_ready_dispatches(self.spec_dir)
-            self.assertEqual([], dispatches)
+    def test_ready_plans_filter_dependencies_and_build_agent_specific_commands(self) -> None:
+        tasks = [
+            self._task("1.1"),
+            self._task("1.2", depends_on=["1.1"], resolved_model="claude-sonnet-5"),
+        ]
+        self._write_tasks(tasks, ["1.1", "1.2"])
+        state = spec_orca._new_state("run_real", self.spec_dir.name)
+        state["tasks_map"] = {"1.1": "task_one", "1.2": "task_two"}
+        spec_orca.save_run_state(self.spec_dir, state)
+
+        plans = spec_orca.get_ready_dispatches(self.spec_dir)
+        self.assertEqual(["1.1"], [plan["task_id"] for plan in plans])
+        self.assertEqual(
+            ["claude", "--permission-mode", "auto", "--model", "claude-sonnet-5", "--effort", "medium"],
+            plans[0]["command_argv"],
+        )
+        codex = spec_orca.get_ready_dispatches(
+            self.spec_dir, agent_override="codex", model_override="gpt-5.5"
+        )[0]
+        self.assertEqual(
+            ["codex", "--approve-for-me", "--model", "gpt-5.5", "-c", "model_reasoning_effort=medium"],
+            codex["command_argv"],
+        )
+        self.assertNotIn("gemini", codex["command"].lower())
+        self.assertEqual("orca-task-spec-inject", codex["prompt_delivery"])
+
+    def test_abstract_extra_high_effort_is_normalized_for_each_current_cli(self) -> None:
+        tasks = [self._task("1.1", reasoning_level="extra_high")]
+        self._write_tasks(tasks, ["1.1"])
+        state = spec_orca._new_state("run_real", self.spec_dir.name)
+        state["tasks_map"] = {"1.1": "task_one"}
+        spec_orca.save_run_state(self.spec_dir, state)
+
+        claude = spec_orca.get_ready_dispatches(self.spec_dir)[0]
+        codex = spec_orca.get_ready_dispatches(
+            self.spec_dir, agent_override="codex", model_override="gpt-5.5"
+        )[0]
+        agy = spec_orca.get_ready_dispatches(
+            self.spec_dir, agent_override="agy", model_override="gemini-2.5-pro"
+        )[0]
+        self.assertEqual("xhigh", claude["command_argv"][-1])
+        self.assertEqual("model_reasoning_effort=xhigh", codex["command_argv"][-1])
+        self.assertEqual("high", agy["command_argv"][-1])
+
+    def test_dispatch_creates_waits_injects_and_persists_real_receipts(self) -> None:
+        self._write_tasks([self._task("1.1")], ["1.1"])
+        state = spec_orca._new_state("run_real", self.spec_dir.name)
+        state["tasks_map"] = {"1.1": "task_real"}
+        spec_orca.save_run_state(self.spec_dir, state)
+        plan = spec_orca.get_ready_dispatches(self.spec_dir)[0]
+
+        receipts = [
+            {"result": {"terminalHandle": "term_real"}},
+            {"ok": True},
+            {"result": {"dispatchId": "dispatch_real"}},
+        ]
+        with patch.object(spec_orca, "run_orca_json", side_effect=receipts) as mocked:
+            records = spec_orca.dispatch_ready(self.spec_dir, [plan], setup="run", repo=None)
+
+        self.assertEqual("dispatch_real", records[0]["dispatch_id"])
+        self.assertEqual("term_real", records[0]["worker_handle"])
+        self.assertIn("terminal", mocked.call_args_list[0].args[0])
+        self.assertIn("wait", mocked.call_args_list[1].args[0])
+        self.assertIn("--inject", mocked.call_args_list[2].args[0])
+        disk = spec_orca.load_run_state(self.spec_dir)
+        self.assertEqual("dispatch_real", disk["dispatches"][0]["dispatch_id"])
 
 
 if __name__ == "__main__":

@@ -657,7 +657,7 @@ def execution_timing_errors(text: str, *, require_timing: bool) -> list[str]:
                 errors.append(f"{kind} {run_id} has invalid Started UTC")
                 continue
             if outcome == "active":
-                if kind != "run" or stop_value != "pending" or elapsed_value != "pending":
+                if stop_value != "pending" or elapsed_value != "pending":
                     errors.append(f"active {kind} {run_id} must have pending stop and elapsed values")
                 continue
             if outcome == "interrupted" and stop_value == "unknown" and elapsed_value == "unknown":

@@ -199,6 +199,11 @@ future automation can parse them:
 
 Timing rules:
 
+0. Maintain exactly one `### Run Intervals` table and one `### Task Attempt Intervals` table.
+   Append or update rows inside those canonical tables; never create replacement copies elsewhere
+   in the ledger. Maintain at most one `### Execution Gantt` section, and regenerate it by replacing
+   that section in place rather than appending another chart.
+
 1. After identifying the spec directory and creating/reading `05_execution.md`, append a unique
    `run-YYYYMMDDTHHMMSSZ` row (add `-NN` if that ID already exists) with the observed start time,
    `Stopped UTC` and `Elapsed Seconds` set to `pending`, and outcome `active`. This includes
@@ -232,6 +237,30 @@ diagram in prose instead. The ledger is authoritative; the Gantt is a derived, g
 Because `05_execution.md` renders Mermaid natively, retain the validated fenced source without
 generating a redundant image unless requested.
 
+### Task flowchart synchronization (required when present)
+
+Treat the task checklist and execution ledger as authoritative and their JSON sidecars as the
+only inputs to the existing `## Stage and Dependency Overview` flowchart. After every task-state,
+attempt-state, or checklist update:
+
+1. Update the existing Markdown row/checkmark first; never add a replacement table or duplicate
+   progress section.
+2. Run `scripts/spec-check.py <spec-dir> --emit-json` immediately so both task and execution
+   sidecars are current. Never render from a stale sidecar.
+3. Run `scripts/render-gantt.py <spec-dir> --write --flowchart-only`. It must replace the one
+   existing flowchart in `04_tasks.md` and leave the checkpoint-only Execution Gantt unchanged.
+4. Render-validate the exact generated flowchart with the `mermaid` skill, then confirm there is
+   exactly one `## Stage and Dependency Overview` heading and one flowchart block.
+
+Whenever the checkpoint-only Gantt is regenerated, also confirm `05_execution.md` contains exactly
+one Run Intervals table, one Task Attempt Intervals table, and one Execution Gantt heading/block.
+
+Use one stable color convention: orange (`in_progress`) for the latest active attempt, red
+(`failed`) when the latest attempt failed, green (`done`) only for checked and verified tasks, and
+gray (`pending`) for pending, queued, ready, or blocked-by-dependency tasks. Latest attempt state
+wins, so an active retry is orange even when an earlier attempt failed. Refresh the flowchart
+before every user-visible status update and before every intentional return.
+
 If work resumes after compaction, interruption, or a failed agent, reconcile `00_state.md`,
 `04_tasks.md`, `05_execution.md`, the working tree, and git history before resuming. Never
 assume an unchecked task is incomplete or a checked task is verified without evidence. A
@@ -248,9 +277,9 @@ Keep execution timing separate from planned delivery scheduling. The required Ex
 observed work intervals only; any forecast Gantt must be separately labeled and must not substitute
 for the task ledger or use invented dates.
 
-Do not add a Kanban, block, state, or dependency diagram to report progress by default. The live
-checklist, Active Wave table, and timing ledger are authoritative and already optimized for frequent
-updates. Add another diagram only for exceptional diagnostic evidence under `spec-debugging`, and
+Do not add a new Kanban, block, state, or dependency diagram to report progress by default. When a
+generated task flowchart already exists, keep that single derived view synchronized as required
+above. Add any other diagram only for exceptional diagnostic evidence under `spec-debugging`, and
 apply the shared diagram policy so it cannot become a competing progress source.
 
 ## Context and execution budgets
@@ -319,22 +348,23 @@ Before each wave:
 
 ### Orca Multi-Agent Orchestration and Wave Dispatch
 
-When executing with Orca (`orca orchestration`), use [`spec-driven/scripts/spec-orca.py`](../spec-driven/scripts/spec-orca.py) to manage the Run DAG, child worktrees, and unattended agent launches:
+When executing with Orca (`orca orchestration`), use [`spec-driven/scripts/spec-orca.py`](../spec-driven/scripts/spec-orca.py) to manage the Run DAG and unattended, supervised launches:
 
 1. **Initialize Orca Run**:
    Run `python3 spec-driven/scripts/spec-orca.py sync .specs/<feature-slug>` to register the task DAG, prerequisite bindings (`--deps`), parent-child hierarchies (`--parent`), and checkpoint decision gates (`gate-create`).
-2. **Quota & Budget Preflight**:
-   Run `python3 spec-driven/scripts/spec-orca.py budget` to inspect credit and provider rate limits. If constrained, the engine automatically down-tiers non-critical tasks to economical models; if exhausted, it pauses execution and defers resumption.
-3. **Dispatch Ready Waves**:
-   Run `python3 spec-driven/scripts/spec-orca.py dispatch-ready .specs/<feature-slug> --json`.
-   - **Parallel-Safe Tasks**: Spawned in isolated child worktrees via:
-     `orca orchestration worker-start --task <id> --worktree new-child --agent <agent> --model <model> --effort <effort> --setup run`
-   - **Sequential Tasks**: Executed in the coordinator's current worktree (`--worktree current`).
-   - **Unattended Execution**: Pass canonical non-interactive flags from [`spec-driven/contracts/agent_profiles.json`](../spec-driven/contracts/agent_profiles.json) (`--dangerously-skip-permissions` for Claude Code, `--full-auto` for Codex, `--yolo` for Antigravity).
+2. **Preview Ready Waves**:
+   Run `python3 spec-driven/scripts/spec-orca.py dispatch-ready .specs/<feature-slug> --json`. The generated `04_tasks.json` already contains the model and reasoning decisions produced by `model-router.py`; the bridge preserves them and infers the matching agent unless `--agent` overrides it.
+   - Treat each Orca Task's `--spec` as the authoritative worker prompt. The bridge builds it from the task title, files, dependencies, requirement IDs, interfaces, dependency resolution/delivery, delegation, risk, documentation, exact verification, resolved model, and reasoning level, plus a bounded execution/reporting contract.
+   - The preview must show `prompt_delivery: orca-task-spec-inject`, the exact `command_argv`, model, and abstract effort. Agent profiles normalize abstract effort to each installed CLI's accepted spelling (for example, `extra_high` becomes Claude/Codex `xhigh` and Agy `high`).
+3. **Dispatch Unattended Workers**:
+   Add `--apply` only after reviewing the preview. Use `--task <spec-id>` to select tasks, `--agent codex|claude|agy` to override the inferred agent, and `--worktree new-child` only for a verified checkout conflict. The default is a fresh agent terminal in the current worktree.
+   - Orca's `worker-start` accepts model and effort but no raw agent flags. The bridge therefore uses the documented custom-argv path: `terminal create`, `terminal wait --for tui-idle`, then `orchestration dispatch --inject`. The final `--inject` delivers the authoritative Task spec as the agent's initial prompt; do not also pass a positional CLI prompt and accidentally execute the task twice.
+   - For a required child checkout, the bridge creates the worktree with `--setup run`, starts the custom-argv agent there, and injects the Task. This path cannot enforce a repository's `wait-for-setup` policy; do not use it for such repositories.
+   - Canonical current flags live in [`spec-driven/contracts/agent_profiles.json`](../spec-driven/contracts/agent_profiles.json): Claude auto permission mode, Codex approval auto-review, and Antigravity's installed unattended flag. Read-only reviewer/explorer role overrides remain sandboxed.
 4. **Supervised PTY Event Loop**:
    - For TUI agents, wait for idle: `orca terminal wait --terminal <handle> --for tui-idle --timeout-ms 10000`.
    - Listen for worker events: `orca orchestration check --wait --types worker_done,escalation,question --timeout-ms 30000`.
-   - When receiving `worker_done`, verify the structured return payload, test changed files against cited requirements, release the terminal via `orca orchestration worker-release --terminal <handle>`, and refresh the execution ledger and Gantt chart via `python3 spec-driven/scripts/render-gantt.py .specs/<feature-slug> --write`.
+   - When receiving `worker_done`, verify the structured return payload, test changed files against cited requirements, release the terminal via `orca orchestration worker-release --dispatch <dispatch-id>`, and refresh the execution ledger and Gantt chart via `python3 spec-driven/scripts/render-gantt.py .specs/<feature-slug> --write`.
 
 ### Capability mapping and reasoning level
 

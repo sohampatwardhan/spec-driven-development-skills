@@ -1,323 +1,504 @@
 #!/usr/bin/env python3
-"""Orca Task Bridge: Synchronize spec task DAGs with Orca Orchestration Runs.
+"""Synchronize a spec task DAG with Orca and launch supervised workers.
 
-Translates `sidecars/04_tasks.json` into Orca Runs, Task DAGs with explicit `--deps`
-and `--parent` hierarchies, Checkpoint Decision Gates (`gate-create`), and manages
-unattended worker dispatches with budget-aware model routing and deferred scheduling.
+The bridge treats Orca's JSON receipts as authoritative.  It never fabricates
+Run, Task, Gate, Dispatch, terminal, or worktree identifiers.  ``sync`` creates
+or binds the Run and mirrors the task DAG.  ``dispatch-ready`` previews ready
+workers by default and launches them only with ``--apply``.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
-import os
+import shlex
 import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 
-def _find_project_root() -> Path:
-    """Locate the root directory of the project containing `.git` or `spec-driven`.
-
-    :return: Absolute Path to the resolved project root.
-    """
-    current = Path.cwd().resolve()
-    for parent in [current, *current.parents]:
-        if (parent / ".git").exists() or (parent / "spec-driven").exists():
-            return parent
-    return current
+SKILL_DIR = Path(__file__).resolve().parent.parent
+AGENT_PROFILES_PATH = SKILL_DIR / "contracts" / "agent_profiles.json"
 
 
-PROJECT_ROOT = _find_project_root()
-CONTRACTS_DIR = PROJECT_ROOT / "spec-driven" / "contracts"
-AGENT_PROFILES_PATH = CONTRACTS_DIR / "agent_profiles.json"
-ROUTER_SCRIPT = PROJECT_ROOT / "spec-driven" / "scripts" / "model-router.py"
+class OrcaCommandError(RuntimeError):
+    """Raised when an Orca mutation or JSON query does not return a usable receipt."""
 
 
-def load_agent_profiles() -> Dict[str, Any]:
-    """Load canonical agent profiles and non-interactive flags from contract.
-
-    Reads `spec-driven/contracts/agent_profiles.json` if present; otherwise falls back
-    to default profiles with verified unattended CLI flags.
-
-    :return: Dictionary of agent configuration profiles.
-    """
-    if AGENT_PROFILES_PATH.is_file():
-        try:
-            return json.loads(AGENT_PROFILES_PATH.read_text(encoding="utf-8"))
-        except Exception:
-            pass
-    return {
-        "schema_version": 1,
-        "agents": {
-            "claude": {
-                "binary": "claude",
-                "unattended_flags": ["--dangerously-skip-permissions"],
-                "model_flag": "--model",
-                "effort_flag": "--effort"
-            },
-            "codex": {
-                "binary": "codex",
-                "unattended_flags": ["--full-auto", "-y"],
-                "model_flag": "--model",
-                "effort_flag": "-c model_reasoning_effort="
-            },
-            "agy": {
-                "binary": "agy",
-                "unattended_flags": ["--yolo", "--auto-approve"],
-                "model_flag": "--model",
-                "effort_flag": "--thinking"
-            }
-        }
-    }
+def load_agent_profiles() -> dict[str, Any]:
+    """Load the canonical, version-controlled agent launch profiles."""
+    try:
+        data = json.loads(AGENT_PROFILES_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise RuntimeError(f"cannot load agent profiles at {AGENT_PROFILES_PATH}: {exc}") from exc
+    if not isinstance(data.get("agents"), dict):
+        raise RuntimeError(f"invalid agent profiles at {AGENT_PROFILES_PATH}: missing agents map")
+    return data
 
 
 def find_tasks_sidecar(spec_dir: Path) -> Path:
-    """Find the path to the 04_tasks.json sidecar in either sidecars/ or root.
-
-    :param spec_dir: Directory path of the spec feature folder.
-    :return: Path to the existing 04_tasks.json sidecar file.
-    :raises FileNotFoundError: If 04_tasks.json is not found in either location.
-    """
-    sidecar_in_subdir = spec_dir / "sidecars" / "04_tasks.json"
-    if sidecar_in_subdir.is_file():
-        return sidecar_in_subdir
-    sidecar_in_root = spec_dir / "04_tasks.json"
-    if sidecar_in_root.is_file():
-        return sidecar_in_root
-    raise FileNotFoundError(f"Could not find 04_tasks.json in {spec_dir} or {spec_dir}/sidecars")
+    """Return the generated task sidecar, preferring the organized sidecars directory."""
+    for candidate in (spec_dir / "sidecars" / "04_tasks.json", spec_dir / "04_tasks.json"):
+        if candidate.is_file():
+            return candidate
+    raise FileNotFoundError(f"could not find 04_tasks.json in {spec_dir}/sidecars or {spec_dir}")
 
 
-def run_orca_cmd(cmd: List[str]) -> Tuple[int, str, str]:
-    """Execute an Orca CLI command safely via subprocess.
+def run_state_path(spec_dir: Path) -> Path:
+    """Return the project-local Orca bridge state path."""
+    return spec_dir / "sidecars" / "orca_run.json"
 
-    :param cmd: List of arguments to pass to the orca binary.
-    :return: Tuple of (returncode, stdout, stderr).
-    """
-    orca_bin = shutil.which("orca") or "/opt/homebrew/bin/orca"
-    full_cmd = [orca_bin, *cmd]
+
+def load_tasks(spec_dir: Path) -> dict[str, Any]:
+    """Load and minimally validate the generated task sidecar."""
+    data = json.loads(find_tasks_sidecar(spec_dir).read_text(encoding="utf-8"))
+    if not isinstance(data.get("tasks"), list) or not isinstance(data.get("concurrency"), dict):
+        raise RuntimeError("04_tasks.json is missing tasks or concurrency data; run spec-check.py --emit-json")
+    return data
+
+
+def load_run_state(spec_dir: Path) -> dict[str, Any]:
+    """Load the persisted Orca receipt map."""
+    path = run_state_path(spec_dir)
+    if not path.is_file():
+        raise FileNotFoundError(f"no {path}; run spec-orca.py sync first")
+    return json.loads(path.read_text(encoding="utf-8"))
+
+
+def save_run_state(spec_dir: Path, state: dict[str, Any]) -> None:
+    """Persist receipt-derived bridge state after each successful mutation."""
+    path = run_state_path(spec_dir)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(state, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def run_orca_cmd(args: list[str], timeout: int = 60) -> tuple[int, str, str]:
+    """Run the installed Orca CLI without invoking a shell."""
+    orca_bin = shutil.which("orca") or shutil.which("orca-ide")
+    if not orca_bin:
+        return 127, "", "orca CLI is not on PATH"
     try:
-        res = subprocess.run(
-            full_cmd,
-            capture_output=True,
-            text=True,
-            check=False,
-            timeout=30
+        result = subprocess.run(
+            [orca_bin, *args], capture_output=True, text=True, check=False, timeout=timeout
         )
-        return res.returncode, res.stdout.strip(), res.stderr.strip()
-    except Exception as e:
-        return 1, "", str(e)
+    except (OSError, subprocess.TimeoutExpired) as exc:
+        return 1, "", str(exc)
+    return result.returncode, result.stdout.strip(), result.stderr.strip()
 
 
-def check_budget_and_quota(provider: str = "anthropic") -> Dict[str, Any]:
-    """Inspect remaining quota, rate limit cooldowns, and budget thresholds.
+def _parse_json_output(output: str) -> Any:
+    """Parse one JSON receipt, tolerating non-JSON diagnostic lines before it."""
+    try:
+        return json.loads(output)
+    except json.JSONDecodeError:
+        starts = [position for token in ("{", "[") if (position := output.find(token)) >= 0]
+        if not starts:
+            raise
+        return json.loads(output[min(starts) :])
 
-    :param provider: Model provider name to check limits for.
-    :return: Dictionary containing status ('ok', 'constrained', 'exhausted', 'cooldown'),
-             remaining USD, and cooldown duration in seconds.
-    """
-    cooldown_sec = int(os.environ.get("ORCA_RATE_LIMIT_COOLDOWN_SEC", "0"))
-    remaining_usd = float(os.environ.get("ORCA_BUDGET_REMAINING_USD", "100.0"))
-    
-    status = "ok"
-    if cooldown_sec > 0:
-        status = "cooldown"
-    elif remaining_usd <= 0.0:
-        status = "exhausted"
-    elif remaining_usd < 5.0:
-        status = "constrained"
-        
+
+def run_orca_json(args: list[str], timeout: int = 60) -> Any:
+    """Run Orca with ``--json`` and return its authoritative result object."""
+    command = [*args, "--json"]
+    code, stdout, stderr = run_orca_cmd(command, timeout=timeout)
+    if code != 0:
+        detail = stdout or stderr or "no diagnostic output"
+        raise OrcaCommandError(f"orca {' '.join(args)} failed ({code}): {detail}")
+    try:
+        receipt = _parse_json_output(stdout)
+    except json.JSONDecodeError as exc:
+        raise OrcaCommandError(f"orca {' '.join(args)} returned invalid JSON: {stdout!r}") from exc
+    if isinstance(receipt, dict) and receipt.get("ok") is False:
+        raise OrcaCommandError(f"orca {' '.join(args)} rejected the request: {json.dumps(receipt)}")
+    return receipt
+
+
+def _walk_dicts(value: Any):
+    if isinstance(value, dict):
+        yield value
+        for child in value.values():
+            yield from _walk_dicts(child)
+    elif isinstance(value, list):
+        for child in value:
+            yield from _walk_dicts(child)
+
+
+def receipt_value(receipt: Any, *keys: str) -> str:
+    """Find the first non-empty string value for a known receipt key."""
+    mappings = list(_walk_dicts(receipt))
+    for key in keys:
+        for mapping in mappings:
+            value = mapping.get(key)
+            if isinstance(value, str) and value:
+                return value
+    raise OrcaCommandError(f"Orca receipt did not contain any of {keys}: {json.dumps(receipt)}")
+
+
+def _new_state(run_id: str, feature_slug: str) -> dict[str, Any]:
     return {
-        "status": status,
-        "remaining_usd": remaining_usd,
-        "cooldown_sec": cooldown_sec,
-        "provider": provider
-    }
-
-
-def resolve_model_with_budget(task_category: str, requested_tier: str, budget_status: Dict[str, Any]) -> Tuple[str, str]:
-    """Apply dynamic down-tiering if budget or provider quotas are constrained.
-
-    :param task_category: The task category (e.g. 'code_analysis', 'unit_test', 'core_logic').
-    :param requested_tier: The requested capability tier ('frontier', 'balanced', 'economical').
-    :param budget_status: The current budget status dictionary from check_budget_and_quota().
-    :return: Tuple of (model_name, reasoning_level).
-    """
-    if budget_status["status"] == "constrained":
-        if task_category in ("code_analysis", "quick_response", "quick_lookup", "documentation", "unit_test"):
-            return "gemini-2.5-flash", "low"
-    return "gemini-2.5-pro", "medium"
-
-
-def sync_spec_to_orca(spec_dir: Path, run_id: Optional[str] = None, objective: Optional[str] = None) -> Dict[str, Any]:
-    """Sync 04_tasks.json into an active Orca Run DAG with task dependencies and decision gates.
-
-    :param spec_dir: Path to the feature spec directory.
-    :param run_id: Optional existing Orca Run ID to bind to.
-    :param objective: Optional descriptive objective for the Run.
-    :return: Serialized dictionary of the active Orca run state.
-    """
-    tasks_file = find_tasks_sidecar(spec_dir)
-    tasks_data = json.loads(tasks_file.read_text(encoding="utf-8"))
-    
-    feature_slug = spec_dir.name
-    obj_desc = objective or f"Execute spec workflow for {feature_slug}"
-    
-    # 1. Initialize or Bind Run
-    active_run_id = run_id or f"run-{feature_slug}"
-    orca_run_state: Dict[str, Any] = {
         "schema_version": 1,
-        "run_id": active_run_id,
+        "run_id": run_id,
         "feature_slug": feature_slug,
         "status": "active",
         "coordinator_handle": "coordinator",
+        "stage_tasks_map": {},
         "tasks_map": {},
         "dispatches": [],
-        "decision_gates": []
+        "decision_gates": [],
     }
-    
-    # 2. Map Tasks and Dependencies
-    for task in tasks_data.get("tasks", []):
-        t_id = task["id"]
-        orca_task_id = f"orca-{feature_slug}-{t_id}"
-        orca_run_state["tasks_map"][t_id] = orca_task_id
-        
-        # Check if task is a checkpoint
-        if "checkpoint" in task.get("title", "").lower():
-            orca_run_state["decision_gates"].append({
-                "gate_id": f"gate-{t_id}",
-                "task_id": t_id,
-                "question": f"Verify checkpoint: {task['title']}?",
-                "options": ["approve", "reject", "re-audit"],
-                "status": "pending",
-                "resolved_choice": None
-            })
-            
-    # Write orca_run.json sidecar
-    sidecars_dir = spec_dir / "sidecars"
-    sidecars_dir.mkdir(parents=True, exist_ok=True)
-    run_file = sidecars_dir / "orca_run.json"
-    run_file.write_text(json.dumps(orca_run_state, indent=2) + "\n", encoding="utf-8")
-    
-    return orca_run_state
 
 
-def get_ready_dispatches(spec_dir: Path) -> List[Dict[str, Any]]:
-    """Determine tasks ready for dispatch in active wave, checking dependencies and budget.
+def _task_spec(task: dict[str, Any]) -> str:
+    """Build the bounded worker prompt stored in Orca's authoritative Task spec."""
+    values = {
+        "Files": ", ".join(task.get("files", [])) or "none declared",
+        "Dependencies": ", ".join(task.get("depends_on", [])) or "none",
+        "Requirements": ", ".join(task.get("requirements", [])) or "none declared",
+        "Interfaces": task.get("interfaces") or "none declared",
+        "Dependency resolution": task.get("dependency_resolution") or "none",
+        "Dependency delivery": task.get("dependency_delivery") or "none",
+        "Delegation": task.get("delegation") or "unspecified",
+        "Risk": task.get("risk") or "unspecified",
+        "Documentation": task.get("documentation") or "none declared",
+        "Verification": task.get("verification") or "none declared",
+        "Resolved model": task.get("resolved_model") or "runtime default",
+        "Reasoning level": task.get("reasoning_level") or "runtime default",
+    }
+    contract = "\n".join(f"{label}: {value}" for label, value in values.items())
+    return (
+        f"Implement bounded spec task {task['id']}: {task['title']}\n\n"
+        f"{contract}\n\n"
+        "Execution contract:\n"
+        "- Read and obey the repository AGENTS.md and the cited spec requirements/design.\n"
+        "- Stay within the declared files and interfaces; escalate before expanding scope.\n"
+        "- Implement the task, run the exact verification, and report changed files plus evidence.\n"
+        "- Do not check off the task or edit the execution ledger; the coordinator owns integration."
+    )
 
-    Scans the active execution stage from `04_tasks.json`, filters out tasks whose
-    prerequisites in `depends_on` are not yet marked checked, checks provider budget/quota
-    cooldowns, and resolves the target agent, unattended execution flags, model, and effort.
 
-    :param spec_dir: Path to the feature spec directory.
-    :return: List of ready dispatch payload dictionaries.
-    """
-    tasks_file = find_tasks_sidecar(spec_dir)
-    tasks_data = json.loads(tasks_file.read_text(encoding="utf-8"))
-    profiles = load_agent_profiles()
-    
-    budget = check_budget_and_quota()
-    if budget["status"] == "exhausted" or budget["status"] == "cooldown":
-        print(f"[ORCA BRIDGE] Execution deferred: quota status is '{budget['status']}' (cooldown: {budget['cooldown_sec']}s).")
-        return []
-        
-    concurrency = tasks_data.get("concurrency", {})
-    ready_ids = concurrency.get("ready", [])
-    tasks_by_id = {t["id"]: t for t in tasks_data.get("tasks", [])}
-    
+def _bind_or_create_run(spec_dir: Path, requested_run: str | None, objective: str) -> dict[str, Any]:
+    path = run_state_path(spec_dir)
+    previous = json.loads(path.read_text(encoding="utf-8")) if path.is_file() else None
+    if previous:
+        previous_run = previous["run_id"]
+        if requested_run and requested_run != previous_run:
+            raise RuntimeError(
+                f"{path} already tracks {previous_run}; remove or archive it before binding {requested_run}"
+            )
+        run_orca_json(["orchestration", "run-use", "--id", previous_run])
+        return previous
+    if requested_run:
+        run_orca_json(["orchestration", "run-use", "--id", requested_run])
+        return _new_state(requested_run, spec_dir.name)
+    receipt = run_orca_json(["orchestration", "run-create", "--objective", objective])
+    return _new_state(receipt_value(receipt, "runId", "run_id", "id"), spec_dir.name)
+
+
+def sync_spec_to_orca(
+    spec_dir: Path, run_id: str | None = None, objective: str | None = None
+) -> dict[str, Any]:
+    """Create or bind a real Orca Run and idempotently mirror stages, tasks, deps, and gates."""
+    spec_dir = spec_dir.resolve()
+    tasks_data = load_tasks(spec_dir)
+    state = _bind_or_create_run(
+        spec_dir, run_id, objective or f"Execute spec workflow for {spec_dir.name}"
+    )
+    save_run_state(spec_dir, state)
+
+    tasks = tasks_data["tasks"]
+    stages = sorted({task.get("stage") for task in tasks if isinstance(task.get("stage"), int)})
+    for stage in stages:
+        key = str(stage)
+        if key in state.setdefault("stage_tasks_map", {}):
+            continue
+        receipt = run_orca_json(
+            [
+                "orchestration", "task-create", "--run", state["run_id"],
+                "--task-title", f"Stage {stage}", "--display-name", f"Stage {stage}",
+                "--spec", f"Grouping task for spec stage {stage}.",
+            ]
+        )
+        state["stage_tasks_map"][key] = receipt_value(receipt, "taskId", "task_id", "id")
+        save_run_state(spec_dir, state)
+
+    pending = {task["id"]: task for task in tasks if task["id"] not in state["tasks_map"]}
+    while pending:
+        progressed = False
+        for task_id, task in list(pending.items()):
+            deps = task.get("depends_on", [])
+            if any(dep not in state["tasks_map"] for dep in deps):
+                continue
+            args = [
+                "orchestration", "task-create", "--run", state["run_id"],
+                "--task-title", f"{task_id} {task['title']}",
+                "--display-name", f"{task_id} {task['title']}", "--spec", _task_spec(task),
+            ]
+            if deps:
+                args.extend(["--deps", json.dumps([state["tasks_map"][dep] for dep in deps])])
+            stage = task.get("stage")
+            if isinstance(stage, int):
+                args.extend(["--parent", state["stage_tasks_map"][str(stage)]])
+            receipt = run_orca_json(args)
+            orca_task_id = receipt_value(receipt, "taskId", "task_id", "id")
+            state["tasks_map"][task_id] = orca_task_id
+            save_run_state(spec_dir, state)
+            if task.get("checked"):
+                run_orca_json(
+                    ["orchestration", "task-update", "--run", state["run_id"],
+                     "--id", orca_task_id, "--status", "completed",
+                     "--result", json.dumps({"source": "04_tasks.json", "checked": True})]
+                )
+            if "checkpoint" in task.get("title", "").lower() and not task.get("checked"):
+                gate = run_orca_json(
+                    ["orchestration", "gate-create", "--task", orca_task_id,
+                     "--question", f"Approve checkpoint: {task['title']}?",
+                     "--options", json.dumps(["approve", "reject", "re-audit"])]
+                )
+                state.setdefault("decision_gates", []).append(
+                    {
+                        "gate_id": receipt_value(gate, "gateId", "gate_id", "id"),
+                        "task_id": task_id,
+                        "question": f"Approve checkpoint: {task['title']}?",
+                        "options": ["approve", "reject", "re-audit"],
+                        "status": "pending",
+                    }
+                )
+                save_run_state(spec_dir, state)
+            del pending[task_id]
+            progressed = True
+        if not progressed:
+            raise RuntimeError(f"cannot topologically sync tasks; unresolved dependencies: {sorted(pending)}")
+
+    for stage in stages:
+        children = [task for task in tasks if task.get("stage") == stage]
+        if children and all(task.get("checked") for task in children):
+            run_orca_json(
+                ["orchestration", "task-update", "--run", state["run_id"],
+                 "--id", state["stage_tasks_map"][str(stage)], "--status", "completed",
+                 "--result", json.dumps({"source": "04_tasks.json", "stage": stage})]
+            )
+    save_run_state(spec_dir, state)
+    return state
+
+
+def _infer_agent(model: str | None, fallback: str) -> str:
+    lowered = (model or "").lower()
+    if lowered.startswith("claude"):
+        return "claude"
+    if lowered.startswith(("gpt", "o1", "o3", "o4", "codex")):
+        return "codex"
+    if lowered.startswith("gemini"):
+        return "agy"
+    return fallback
+
+
+def _model_matches_agent(model: str | None, agent: str) -> bool:
+    return model is not None and _infer_agent(model, "") == agent
+
+
+def _profile_flags(profile: dict[str, Any], role: str) -> list[str]:
+    override = profile.get("role_overrides", {}).get(role, {})
+    return list(override.get("unattended_flags", profile.get("unattended_flags", [])))
+
+
+def _agent_command(
+    agent: str, profile: dict[str, Any], role: str, model: str | None, effort: str | None
+) -> list[str]:
+    command = [profile.get("binary", agent), *_profile_flags(profile, role)]
+    if model and profile.get("model_flag"):
+        command.extend([profile["model_flag"], model])
+    effort_flag = profile.get("effort_flag")
+    if effort and effort_flag:
+        effort = profile.get("effort_map", {}).get(effort, effort)
+        if effort_flag.endswith("="):
+            head, prefix = effort_flag.split(" ", 1)
+            command.extend([head, prefix + effort])
+        else:
+            command.extend([effort_flag, effort])
+    return command
+
+
+def get_ready_dispatches(
+    spec_dir: Path,
+    *,
+    task_filter: set[str] | None = None,
+    default_agent: str = "claude",
+    agent_override: str | None = None,
+    role: str = "implementer",
+    model_override: str | None = None,
+    worktree_override: str | None = None,
+) -> list[dict[str, Any]]:
+    """Return receipt-linked launch plans for unchecked, dependency-ready spec tasks."""
+    tasks_data = load_tasks(spec_dir)
+    state = load_run_state(spec_dir)
+    profiles = load_agent_profiles()["agents"]
+    tasks_by_id = {task["id"]: task for task in tasks_data["tasks"]}
     dispatches = []
-    for tid in ready_ids:
-        task = tasks_by_id.get(tid)
+    for task_id in tasks_data["concurrency"].get("ready", []):
+        if task_filter and task_id not in task_filter:
+            continue
+        task = tasks_by_id.get(task_id)
         if not task or task.get("checked"):
             continue
-            
-        # Verify all dependencies are checked
-        deps = task.get("depends_on", [])
-        unmet = [d for d in deps if not tasks_by_id.get(d, {}).get("checked")]
-        if unmet:
-            # Blocked by unmet dependency
+        if any(not tasks_by_id.get(dep, {}).get("checked") for dep in task.get("depends_on", [])):
             continue
-            
-        agent_name = task.get("orca_dispatch", {}).get("agent", "claude")
-        agent_prof = profiles.get("agents", {}).get(agent_name, {})
-        
-        # Resolve model and effort with budget awareness
-        category = task.get("task_category", "core_logic")
-        req_tier = task.get("capability_tier", "complex_reasoning")
-        model, effort = resolve_model_with_budget(category, req_tier, budget)
-        
-        flags = agent_prof.get("unattended_flags", ["--dangerously-skip-permissions"])
-        
-        dispatches.append({
-            "task_id": tid,
-            "title": task["title"],
-            "delegation": task.get("delegation", "parallel-safe"),
-            "worktree_mode": "new-child" if task.get("delegation") == "parallel-safe" else "current",
-            "agent": agent_name,
-            "unattended_flags": flags,
-            "model": model,
-            "effort": effort,
-            "files": task.get("files", [])
-        })
-        
+        if task_id not in state.get("tasks_map", {}):
+            raise RuntimeError(f"spec task {task_id} has not been synced to Orca")
+        configured = task.get("orca_dispatch", {})
+        task_model = task.get("resolved_model")
+        agent = agent_override or configured.get("agent") or _infer_agent(task_model, default_agent)
+        if agent not in profiles:
+            raise RuntimeError(f"unknown agent {agent!r}; expected one of {sorted(profiles)}")
+        model = model_override or (task_model if _model_matches_agent(task_model, agent) else None)
+        effort = task.get("reasoning_level")
+        worktree_mode = worktree_override or configured.get("worktree_mode") or "current"
+        command = _agent_command(agent, profiles[agent], role, model, effort)
+        dispatches.append(
+            {
+                "task_id": task_id,
+                "orca_task_id": state["tasks_map"][task_id],
+                "title": task["title"],
+                "agent": agent,
+                "role": role,
+                "model": model,
+                "effort": effort,
+                "worktree_mode": worktree_mode,
+                "command_argv": command,
+                "command": shlex.join(command),
+                "prompt_delivery": "orca-task-spec-inject",
+                "files": task.get("files", []),
+            }
+        )
     return dispatches
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser(description="Orca Task Bridge & DAG Orchestrator")
-    subparsers = parser.add_subparsers(dest="command", required=True)
-    
-    # Sync subcommand
-    sync_p = subparsers.add_parser("sync", help="Sync spec tasks into Orca Run DAG")
-    sync_p.add_argument("spec_dir", type=Path, help="Path to spec directory (e.g. .specs/orca-agent-orchestration)")
-    sync_p.add_argument("--run", type=str, default=None, help="Orca Run ID")
-    sync_p.add_argument("--objective", type=str, default=None, help="Run objective description")
-    
-    # Status subcommand
-    stat_p = subparsers.add_parser("status", help="Inspect active Orca run and task readiness")
-    stat_p.add_argument("spec_dir", type=Path, help="Path to spec directory")
-    
-    # Dispatch-ready subcommand
-    disp_p = subparsers.add_parser("dispatch-ready", help="List or dispatch ready tasks in active wave")
-    disp_p.add_argument("spec_dir", type=Path, help="Path to spec directory")
-    disp_p.add_argument("--json", action="store_true", help="Output as JSON")
-    
-    # Budget subcommand
-    budg_p = subparsers.add_parser("budget", help="Check quota and budget status")
-    budg_p.add_argument("--provider", type=str, default="anthropic", help="Provider name")
+def _create_worker_terminal(
+    plan: dict[str, Any], feature_slug: str, setup: str, repo: str | None
+) -> tuple[str, str | None]:
+    if plan["worktree_mode"] == "current":
+        receipt = run_orca_json(
+            ["terminal", "create", "--worktree", "active", "--title",
+             f"{feature_slug}-{plan['task_id']}", "--command", plan["command"]]
+        )
+        return receipt_value(receipt, "terminalHandle", "terminal_handle", "handle"), None
+    if plan["worktree_mode"] != "new-child":
+        raise RuntimeError(f"unsupported worktree mode {plan['worktree_mode']!r}")
+    name = f"{feature_slug}-{plan['task_id'].replace('.', '-')}"
+    args = ["worktree", "create", "--name", name, "--parent-worktree", "active", "--setup", setup]
+    if repo:
+        args.extend(["--repo", repo])
+    worktree = run_orca_json(args, timeout=120)
+    worktree_id = receipt_value(worktree, "fullWorktreeId", "worktreeId", "worktree_id", "id")
+    terminal = run_orca_json(
+        ["terminal", "create", "--worktree", f"id:{worktree_id}", "--title", name,
+         "--command", plan["command"]]
+    )
+    return receipt_value(terminal, "terminalHandle", "terminal_handle", "handle"), worktree_id
 
-    args = parser.parse_args()
-    
-    if args.command == "sync":
-        res = sync_spec_to_orca(args.spec_dir, run_id=args.run, objective=args.objective)
-        print(f"Synced {len(res['tasks_map'])} tasks and {len(res['decision_gates'])} gates to Orca Run '{res['run_id']}'.")
-        print(f"Wrote sidecars/orca_run.json.")
-        
-    elif args.command == "status":
-        sidecar = args.spec_dir / "sidecars" / "orca_run.json"
-        if not sidecar.is_file():
-            print(f"No active orca_run.json found in {args.spec_dir}/sidecars. Run 'spec-orca.py sync' first.")
-            sys.exit(1)
-        data = json.loads(sidecar.read_text(encoding="utf-8"))
-        print(f"Run ID: {data.get('run_id')} (Status: {data.get('status')})")
-        print(f"Tasks: {len(data.get('tasks_map', {}))} registered")
-        print(f"Decision Gates: {len(data.get('decision_gates', []))} pending")
-        
-    elif args.command == "dispatch-ready":
-        dispatches = get_ready_dispatches(args.spec_dir)
-        if args.json:
-            print(json.dumps(dispatches, indent=2))
+
+def dispatch_ready(
+    spec_dir: Path, plans: list[dict[str, Any]], *, setup: str, repo: str | None
+) -> list[dict[str, Any]]:
+    """Launch custom-argv terminals, wait for TUI readiness, inject tasks, and save receipts."""
+    state = load_run_state(spec_dir)
+    results = []
+    for plan in plans:
+        terminal_handle, worktree_id = _create_worker_terminal(
+            plan, state["feature_slug"], setup, repo
+        )
+        run_orca_json(
+            ["terminal", "wait", "--terminal", terminal_handle, "--for", "tui-idle",
+             "--timeout-ms", "60000"], timeout=75
+        )
+        receipt = run_orca_json(
+            ["orchestration", "dispatch", "--run", state["run_id"],
+             "--task", plan["orca_task_id"], "--to", terminal_handle, "--inject"]
+        )
+        record: dict[str, Any] = {
+            "task_id": plan["task_id"],
+            "orca_task_id": plan["orca_task_id"],
+            "dispatch_id": receipt_value(receipt, "dispatchId", "dispatch_id", "id"),
+            "worker_handle": terminal_handle,
+            "worktree_path": worktree_id or "current",
+            "agent": plan["agent"],
+            "effort": plan["effort"],
+            "status": "dispatched",
+        }
+        if plan["model"]:
+            record["model"] = plan["model"]
+        state.setdefault("dispatches", []).append(record)
+        save_run_state(spec_dir, state)
+        results.append(record)
+    return results
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    subparsers = parser.add_subparsers(dest="command", required=True)
+
+    sync_parser = subparsers.add_parser("sync", help="Create/bind a Run and mirror the spec DAG")
+    sync_parser.add_argument("spec_dir", type=Path)
+    sync_parser.add_argument("--run")
+    sync_parser.add_argument("--objective")
+
+    status_parser = subparsers.add_parser("status", help="Print persisted receipt-derived state")
+    status_parser.add_argument("spec_dir", type=Path)
+    status_parser.add_argument("--json", action="store_true")
+
+    dispatch_parser = subparsers.add_parser(
+        "dispatch-ready", help="Preview ready workers; add --apply to launch and inject"
+    )
+    dispatch_parser.add_argument("spec_dir", type=Path)
+    dispatch_parser.add_argument("--apply", action="store_true")
+    dispatch_parser.add_argument("--json", action="store_true")
+    dispatch_parser.add_argument("--task", action="append", dest="tasks")
+    dispatch_parser.add_argument("--default-agent", default="claude")
+    dispatch_parser.add_argument("--agent")
+    dispatch_parser.add_argument("--role", choices=["implementer", "reviewer", "explorer"], default="implementer")
+    dispatch_parser.add_argument("--model")
+    dispatch_parser.add_argument("--worktree", choices=["current", "new-child"])
+    dispatch_parser.add_argument("--setup", choices=["run", "skip", "inherit"], default="run")
+    dispatch_parser.add_argument("--repo")
+
+    args = parser.parse_args(argv)
+    try:
+        if args.command == "sync":
+            state = sync_spec_to_orca(args.spec_dir, args.run, args.objective)
+            print(json.dumps(state, indent=2) if getattr(args, "json", False) else
+                  f"Synced {len(state['tasks_map'])} tasks to Orca Run {state['run_id']}.")
+        elif args.command == "status":
+            state = load_run_state(args.spec_dir)
+            print(json.dumps(state, indent=2) if args.json else
+                  f"Run {state['run_id']}: {len(state['tasks_map'])} tasks, "
+                  f"{len(state.get('dispatches', []))} dispatches")
         else:
-            print(f"Ready Dispatches ({len(dispatches)}):")
-            for d in dispatches:
-                print(f"  - [{d['task_id']}] {d['title']} -> {d['agent']} ({d['worktree_mode']}) [Model: {d['model']}]")
-                
-    elif args.command == "budget":
-        b = check_budget_and_quota(args.provider)
-        print(json.dumps(b, indent=2))
+            plans = get_ready_dispatches(
+                args.spec_dir,
+                task_filter=set(args.tasks) if args.tasks else None,
+                default_agent=args.default_agent,
+                agent_override=args.agent,
+                role=args.role,
+                model_override=args.model,
+                worktree_override=args.worktree,
+            )
+            output = dispatch_ready(args.spec_dir, plans, setup=args.setup, repo=args.repo) if args.apply else plans
+            if args.json:
+                print(json.dumps(output, indent=2))
+            else:
+                verb = "Dispatched" if args.apply else "Ready"
+                print(f"{verb} workers ({len(output)}):")
+                for item in output:
+                    if args.apply:
+                        print(f"  - {item['task_id']} -> {item['dispatch_id']}")
+                    else:
+                        print(f"  - {item['task_id']} -> {item['agent']} ({item['worktree_mode']}): {item['command']}")
+    except (FileNotFoundError, RuntimeError, OrcaCommandError) as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())

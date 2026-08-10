@@ -682,6 +682,23 @@ gantt
 """
         self.assertEqual([], spec_check.execution_timing_errors(valid, require_timing=True))
 
+    def test_execution_timing_accepts_truthful_active_task_attempt(self) -> None:
+        active = """# Execution Ledger: Example
+
+## Execution Timing
+
+### Run Intervals
+| Run ID | Started UTC | Stopped UTC | Elapsed Seconds | Outcome |
+|---|---|---|---:|---|
+| run-20260809T120000Z | 2026-08-09T12:00:00Z | pending | pending | active |
+
+### Task Attempt Intervals
+| Run ID | Stage/Wave | Task | Attempt | Started UTC | Stopped UTC | Elapsed Seconds | Outcome |
+|---|---|---|---:|---|---|---:|---|
+| run-20260809T120000Z | 1/serial | 1.1 | 1 | 2026-08-09T12:00:01Z | pending | pending | active |
+"""
+        self.assertEqual([], spec_check.execution_timing_errors(active, require_timing=True))
+
     def test_resolution_metadata_drives_bump_pin_and_exact_manifest_lock_ownership(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

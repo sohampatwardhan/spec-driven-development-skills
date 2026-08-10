@@ -224,14 +224,13 @@ runtime_adapters:
     guardrails: validate every intermediate structured return
   orca:
     orchestration: persistent coordination Run with task DAG dependencies (--deps) and checkpoints (gate-create)
-    placement: isolated child worktrees (--worktree new-child --setup run) for parallel-safe tasks
+    placement: fresh current-worktree terminals by default; child worktrees only for verified checkout conflicts
     supervision: event listener via check --wait, structured worker_done verification, and worker-release
-    agent_profiles: canonical unattended CLI flags (--dangerously-skip-permissions, --full-auto, --yolo) from agent_profiles.json
-    budget_routing: credit and quota-aware dynamic down-tiering and deferred scheduling
+    agent_profiles: canonical installed-CLI launch flags and role overrides from agent_profiles.json
+    dispatch_adapter: custom argv via terminal create plus dispatch --inject when worker-start cannot express agent flags
 
 sidecar_contracts:
   schemas_directory: contracts/schemas
   sidecars_directory: sidecars
   agent_profiles: contracts/agent_profiles.json
   traceability_validation: true
-

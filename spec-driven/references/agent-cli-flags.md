@@ -14,8 +14,8 @@ This reference documents the canonical flags for unattended operation across maj
 
 Anthropic Claude Code is an agentic terminal tool.
 
-- **Unattended Flag**: `--dangerously-skip-permissions` (or `--permission-mode bypassPermissions`)
-  - Bypasses interactive prompts for tool execution, bash commands, and file edits.
+- **Unattended Flag**: `--permission-mode auto`
+  - Uses Claude Code's automatic permission classifier without requiring a manual mode toggle.
 - **Model Flag**: `--model <model-name>`
 - **Effort Flag**: `--effort <low|medium|high>`
 - **Non-Interactive Print**: `-p "<prompt>"` / `--print`
@@ -24,7 +24,7 @@ Anthropic Claude Code is an agentic terminal tool.
 #### Example Invocations
 ```bash
 # Implementer in isolated worktree
-claude --dangerously-skip-permissions --model claude-3-7-sonnet --effort high
+claude --permission-mode auto --model sonnet --effort high
 
 # Non-interactive query
 claude -p "Explain architecture in src/core.py" --output-format json
@@ -36,8 +36,8 @@ claude -p "Explain architecture in src/core.py" --output-format json
 
 OpenAI Codex is a CLI agent for terminal workflows.
 
-- **Unattended Flags**: `--full-auto`, `-y`
-  - Automatically confirms tool execution and shell actions.
+- **Unattended Flag**: `--approve-for-me`
+  - Routes approval requests through Codex's automatic reviewer while retaining its workspace-write sandbox.
 - **Model Flag**: `--model <model-name>`
 - **Effort Flag**: `-c model_reasoning_effort="<low|medium|high>"`
 - **Reviewer Sandbox**: `--sandbox read-only`
@@ -45,10 +45,10 @@ OpenAI Codex is a CLI agent for terminal workflows.
 #### Example Invocations
 ```bash
 # Implementer
-codex --full-auto -y --model o3-mini -c model_reasoning_effort="medium"
+codex --approve-for-me --model gpt-5.5 -c model_reasoning_effort="medium"
 
 # Read-only Reviewer
-codex --sandbox read-only --model o3-mini
+codex --sandbox read-only --ask-for-approval never --model gpt-5.5
 ```
 
 ---
@@ -57,15 +57,15 @@ codex --sandbox read-only --model o3-mini
 
 Google Antigravity CLI operates in agentic mode.
 
-- **Unattended Flags**: `--yolo`, `--auto-approve`, `--bypass-sandbox`
+- **Unattended Flag**: `--dangerously-skip-permissions`
 - **Model Flag**: `--model <model-name>`
-- **Thinking Flag**: `--thinking <low|medium|high>`
-- **Reviewer Mode**: `--read-only`
+- **Effort Flag**: `--effort <low|medium|high>`
+- **Reviewer Mode**: `--mode plan --sandbox`
 
 #### Example Invocations
 ```bash
 # Implementer
-agy --yolo --auto-approve --model gemini-2.5-pro --thinking high
+agy --dangerously-skip-permissions --model gemini-2.5-pro --effort high
 ```
 
 ---

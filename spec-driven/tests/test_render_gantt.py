@@ -101,6 +101,25 @@ class RenderGanttTests(unittest.TestCase):
         self.assertIn("Task 1.2 : crit,", diagram)
         self.assertIn("Task 1.3 : active,", diagram)
 
+    def test_active_attempt_with_pending_stop_renders_deterministically(self) -> None:
+        data = {
+            "task_attempts": [{
+                "run_id": "run-1",
+                "stage_wave": "Stage 3",
+                "task": "3.1",
+                "attempt": 2,
+                "started_utc": "2026-08-10T12:04:00Z",
+                "stopped_utc": "pending",
+                "elapsed_seconds": "pending",
+                "outcome": "active",
+            }]
+        }
+        diagram, _ = render_gantt.build_gantt_from_execution_data(data, feature_slug="demo")
+        self.assertIn(
+            "Task 3.1 : active, t_3_1_att_2, 2026-08-10T12:04:00, 2026-08-10T12:04:01",
+            diagram,
+        )
+
     def test_inject_gantt_into_execution_md(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             exec_md = Path(directory) / "05_execution.md"
@@ -112,8 +131,41 @@ class RenderGanttTests(unittest.TestCase):
             render_gantt.inject_gantt_into_execution_md(exec_md, new_diagram)
 
             content = exec_md.read_text(encoding="utf-8")
+            self.assertEqual(1, content.count("### Execution Gantt"))
             self.assertIn("title New Gantt", content)
             self.assertNotIn("title Old Gantt", content)
+
+    def test_flowchart_only_write_replaces_flowchart_without_touching_gantt(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            spec_dir = Path(directory)
+            tasks_md = spec_dir / "04_tasks.md"
+            execution_md = spec_dir / "05_execution.md"
+            tasks_md.write_text(
+                "# Tasks\n\n## Stage and Dependency Overview\n\n"
+                "```mermaid\nflowchart TD\n    old[Old]\n```\n\n- [ ] 1. Task\n",
+                encoding="utf-8",
+            )
+            execution_md.write_text(
+                "# Execution\n\n### Execution Gantt\n\n"
+                "```mermaid\ngantt\n    title Existing\n```\n",
+                encoding="utf-8",
+            )
+            new_flowchart = "```mermaid\nflowchart TD\n    new[New]\n```"
+
+            render_gantt.write_generated_diagrams(
+                spec_dir,
+                "```mermaid\ngantt\n    title Replacement\n```",
+                new_flowchart,
+                flowchart_only=True,
+            )
+
+            task_text = tasks_md.read_text(encoding="utf-8")
+            execution_text = execution_md.read_text(encoding="utf-8")
+            self.assertEqual(1, task_text.count("## Stage and Dependency Overview"))
+            self.assertIn("new[New]", task_text)
+            self.assertNotIn("old[Old]", task_text)
+            self.assertIn("title Existing", execution_text)
+            self.assertNotIn("title Replacement", execution_text)
 
     def test_flowchart_color_coding_standards(self) -> None:
         tasks_data = {
@@ -139,6 +191,18 @@ class RenderGanttTests(unittest.TestCase):
         self.assertIn("class t_1_2 in_progress;", diagram)
         self.assertIn("class t_1_3 failed;", diagram)
         self.assertIn("class t_1_4 pending;", diagram)
+
+    def test_latest_attempt_drives_active_flowchart_state(self) -> None:
+        data = {
+            "task_attempts": [
+                {"task": "3.1", "attempt": 1, "started_utc": "2026-08-10T12:00:00Z", "outcome": "failed"},
+                {"task": "3.1", "attempt": 2, "started_utc": "2026-08-10T12:05:00Z", "outcome": "active"},
+                {"task": "3.2", "attempt": 1, "started_utc": "2026-08-10T12:01:00Z", "outcome": "failed"},
+            ]
+        }
+        active, failed = render_gantt.task_state_ids_from_execution_data(data)
+        self.assertEqual(["3.1"], active)
+        self.assertEqual(["3.2"], failed)
 
 
 if __name__ == "__main__":

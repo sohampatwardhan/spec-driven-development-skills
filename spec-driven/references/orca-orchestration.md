@@ -17,7 +17,7 @@ A **Run** encapsulates a coordinated multi-task workflow with shared state, depe
 orca orchestration run-create --objective "<objective description>" --json
 
 # Bind an existing Run to the active terminal context
-orca orchestration run-use --run <run_id> --json
+orca orchestration run-use --id <run_id> --json
 
 # List active or recent Runs
 orca orchestration run-list --json
@@ -40,12 +40,9 @@ orca orchestration task-create \
 
 ---
 
-### 3. Worker Placement & Worktree Isolation
+### 3. Worker Placement and Custom Agent Arguments
 
-Workers execute tasks in supervised background PTYs.
-
-- **Parallel-Safe Tasks**: Spawned in isolated child git worktrees (`--worktree new-child --setup run`) to prevent concurrent file overwrite conflicts.
-- **Sequential Tasks**: Executed in the current coordinator worktree (`--worktree current`).
+Workers execute tasks in supervised background PTYs. Use `worker-start` when its known-agent launch is sufficient. It does not pass arbitrary agent CLI flags.
 
 ```bash
 # Dispatch worker in child worktree
@@ -58,6 +55,16 @@ orca orchestration worker-start \
   --setup run \
   --json
 ```
+
+For unattended flags or other custom argv, use the low-level path that Orca documents for topology `worker-start` does not express:
+
+```bash
+orca terminal create --worktree active --command "codex --approve-for-me" --json
+orca terminal wait --terminal <terminal_handle> --for tui-idle --timeout-ms 60000 --json
+orca orchestration dispatch --task <task_id> --to <terminal_handle> --inject --json
+```
+
+Stay in the current worktree by default. Create a child worktree only when the user requested one or a verified checkout/file conflict makes sharing impossible. Custom argv in a new child requires `worktree create --setup run` followed by `terminal create`; it cannot enforce a repository's `wait-for-setup` launch policy.
 
 ---
 
@@ -83,7 +90,7 @@ orca orchestration check --wait --types worker_done,escalation,question --timeou
 orca orchestration send --type reply --to <worker_handle> --payload '{"answer": "..."}'
 
 # Release terminal after worker_done
-orca orchestration worker-release --terminal <terminal_handle> --json
+orca orchestration worker-release --dispatch <dispatch_id> --json
 ```
 
 ---
@@ -97,5 +104,5 @@ Checkpoints in a spec map to Orca Decision Gates:
 orca orchestration gate-create --task <task_id> --question "Approve design changes?" --options '["approve", "reject"]' --json
 
 # Resolve a gate
-orca orchestration gate-resolve --gate <gate_id> --choice "approve" --json
+orca orchestration gate-resolve --id <gate_id> --resolution "approve" --json
 ```
