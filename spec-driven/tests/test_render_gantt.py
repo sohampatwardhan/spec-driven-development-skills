@@ -296,7 +296,7 @@ class RenderGanttTests(unittest.TestCase):
         self.assertIn("in_progress[In Progress]", kanban)
         self.assertIn("kanban_2_1", kanban)
 
-    def test_inject_kanban_into_execution_md_places_after_gantt(self) -> None:
+    def test_inject_kanban_into_execution_md_places_before_gantt(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             exec_md = Path(directory) / "05_execution.md"
             exec_md.write_text(
@@ -310,9 +310,9 @@ class RenderGanttTests(unittest.TestCase):
             content = exec_md.read_text(encoding="utf-8")
             self.assertEqual(1, content.count("### Task Board"))
             self.assertIn("title Existing", content)
-            gantt_idx = content.index("### Execution Gantt")
             board_idx = content.index("### Task Board")
-            self.assertLess(gantt_idx, board_idx)
+            gantt_idx = content.index("### Execution Gantt")
+            self.assertLess(board_idx, gantt_idx)
 
     def test_inject_kanban_into_execution_md_is_idempotent(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

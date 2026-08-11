@@ -397,8 +397,9 @@ def inject_gantt_into_execution_md(execution_md_path: Path, diagram: str) -> Non
 def inject_kanban_into_execution_md(execution_md_path: Path, diagram: str) -> None:
     """Inject or replace ### Task Board in 05_execution.md idempotently without duplication.
 
-    Places the Task Board immediately after ### Execution Gantt under ## Execution Timing,
-    assuming the Gantt has already been injected (or the file already existed) in the same pass.
+    Places the Task Board first under ## Execution Timing — before the Run Intervals table, the
+    Task Attempt Intervals table, and ### Execution Gantt — as the quick-glance status view ahead
+    of the detailed timing ledger and timeline.
 
     :param execution_md_path: Path to the 05_execution.md Markdown file.
     :param diagram: Valid Mermaid fenced kanban markdown string to inject.
@@ -414,12 +415,10 @@ def inject_kanban_into_execution_md(execution_md_path: Path, diagram: str) -> No
     cleaned = re.sub(r"(?ms)\n*###\s+Task Board\s*\n\s*```mermaid\s*\nkanban\b.*?```\n*", "\n\n", content)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip()
 
-    gantt_match = re.search(r"(?ms)###\s+Execution Gantt\s*\n\s*```mermaid\s*\ngantt\b.*?```", cleaned)
-    if gantt_match:
-        insert_idx = gantt_match.end()
-        updated = cleaned[:insert_idx] + f"\n\n### Task Board\n\n{diagram}\n" + cleaned[insert_idx:].lstrip("\n")
-    elif "## Execution Timing" in cleaned:
-        updated = cleaned + f"\n\n### Task Board\n\n{diagram}\n"
+    timing_match = re.search(r"##\s+Execution Timing\s*\n", cleaned)
+    if timing_match:
+        insert_idx = timing_match.end()
+        updated = cleaned[:insert_idx] + f"\n### Task Board\n\n{diagram}\n" + cleaned[insert_idx:].lstrip("\n")
     else:
         updated = cleaned + f"\n\n## Execution Timing\n\n### Task Board\n\n{diagram}\n"
 

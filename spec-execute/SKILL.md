@@ -239,8 +239,10 @@ generating a redundant image unless requested.
 
 ### Task Board (execution-only, conditional)
 
-`05_execution.md` may also carry a `### Task Board` kanban immediately after `### Execution
-Gantt`, grouping tasks into Pending/In Progress/Failed/Done columns from the same `04_tasks.json`
+`05_execution.md` may also carry a `### Task Board` kanban as the first thing under `##
+Execution Timing` — before `### Run Intervals`, `### Task Attempt Intervals`, and `### Execution
+Gantt` — as the quick-glance status view ahead of the detailed timing ledger and timeline.
+It groups tasks into Pending/In Progress/Failed/Done columns from the same `04_tasks.json`
 and `05_execution.json` sidecars the flowchart reads. This is the one named exception to "do not
 add a new Kanban" below: it lives only in `05_execution.md`, and it supplements rather than
 replaces or duplicates the required `04_tasks.md` dependency flowchart. Both views must derive

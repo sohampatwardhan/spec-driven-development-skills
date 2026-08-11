@@ -127,6 +127,19 @@ understandable without reconstructing the agent's prior conversation.
 
 ## Execution Timing
 
+### Task Board (conditional, execution-only)
+<Validated Mermaid `kanban`, present only when the spec also carries a `04_tasks.md` dependency
+flowchart. Placed first in this section — the quick-glance status view ahead of the detailed
+timing ledger and timeline. Grouped into Pending/In Progress/Failed/Done columns derived from
+`04_tasks.json` and `05_execution.json` by `spec-driven/scripts/render-gantt.py`'s
+`build_kanban_board_from_tasks_data` — the same `derive_task_statuses` helper the flowchart uses,
+so the two views never disagree on status. Mermaid kanban has no render-validated per-card
+`style`/`classDef` mechanism, so each card carries a colored-circle emoji (⚪🟠🔴🟢) matching the
+flowchart's pending/in_progress/failed/done palette instead of a literal fill/stroke color.
+Hand-authored deterministically rather than via `mermaid/scripts/render.py`, because the `mermaid`
+skill's IR has no `kanban` family yet; still render-validate the exact generated source before
+saving. Supplements, never replaces, the required flowchart.>
+
 ### Run Intervals
 | Run ID | Started UTC | Stopped UTC | Elapsed Seconds | Outcome |
 |---|---|---|---:|---|
@@ -139,18 +152,6 @@ understandable without reconstructing the agent's prior conversation.
 <Validated Mermaid `gantt`, generated from `05_execution.json`'s `gantt` IR object via
 `mermaid/scripts/render.py --target gantt` (never hand-transcribed from the tables above), then
 render-validated exactly as before.>
-
-### Task Board (conditional, execution-only)
-<Validated Mermaid `kanban`, present only when the spec also carries a `04_tasks.md` dependency
-flowchart. Grouped into Pending/In Progress/Failed/Done columns derived from `04_tasks.json` and
-`05_execution.json` by `spec-driven/scripts/render-gantt.py`'s `build_kanban_board_from_tasks_data`
-— the same `derive_task_statuses` helper the flowchart uses, so the two views never disagree on
-status. Mermaid kanban has no render-validated per-card `style`/`classDef` mechanism, so each card
-carries a colored-circle emoji (⚪🟠🔴🟢) matching the flowchart's pending/in_progress/failed/done
-palette instead of a literal fill/stroke color. Hand-authored deterministically rather than via
-`mermaid/scripts/render.py`, because the `mermaid` skill's IR has no `kanban` family yet; still
-render-validate the exact generated source before saving. Supplements, never replaces, the required
-flowchart.>
 
 ## Checkpoints
 
