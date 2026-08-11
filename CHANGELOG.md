@@ -2,7 +2,7 @@
 
 All notable changes to the Spec-Driven Development Skills suite are documented in this file.
 
-## [Unreleased] - 2026-08-10
+## [Unreleased] - 2026-08-11
 
 ### Added
 - **Orca Multi-Agent Task Orchestration**:
@@ -23,16 +23,25 @@ All notable changes to the Spec-Driven Development Skills suite are documented i
     - **Red (`failed`)**: `fill:#fee2e2,stroke:#ef4444` (verification defect)
     - **Amber (`in_progress`)**: `fill:#fef3c7,stroke:#f59e0b` (active executing wave)
     - **Green (`done`)**: `fill:#dcfce7,stroke:#22c55e` (verified completed)
+  - Added `### Task Board` kanban generator (`build_kanban_board_from_tasks_data()`), an
+    execution-only, conditional companion to the Execution Gantt in `05_execution.md`. Groups
+    tasks into Pending/In Progress/Failed/Done columns using the same `derive_task_statuses()`
+    helper the flowchart uses, so the two views can never disagree. Mermaid kanban has no
+    render-validated per-card `style`/`classDef` mechanism (`style <id> fill:...` renders as a
+    bogus extra column; `:::class` is a parse error), so status is carried via a colored-circle
+    emoji prefix (⚪🟠🔴🟢) instead of a literal fill/stroke color — confirmed by direct
+    render-validation. Supplements, never replaces, the required `04_tasks.md` flowchart.
 - **Budget & Quota Aware Routing**:
   - Integrated quota inspection and budget cooldown checks in `spec-orca.py` and `model-router.py` to dynamically down-tier lightweight tasks under credit constraints and defer execution if provider quotas are exhausted.
 - **Testing & Verification Suites**:
   - Added [`spec-driven/tests/test_spec_orca.py`](spec-driven/tests/test_spec_orca.py) (5 tests) for DAG mapping, dependency blocking, decision gates, and budget routing.
-  - Added [`spec-driven/tests/test_render_gantt.py`](spec-driven/tests/test_render_gantt.py) (5 tests) for Mermaid Gantt syntax, 0-second duration protection, outcome tags, and 4-color flowchart standards.
+  - [`spec-driven/tests/test_render_gantt.py`](spec-driven/tests/test_render_gantt.py) now has 18 tests, covering Mermaid Gantt syntax, 0-second duration protection, outcome tags, 4-color flowchart standards, Task Board kanban grouping/omission/sanitization, flowchart↔kanban status agreement, and idempotent Task Board injection.
   - Extended [`spec-driven/tests/test_sidecars.py`](spec-driven/tests/test_sidecars.py) for schema validation and `sidecars/` subfolder emission.
-  - Full test suite passing at 114 passed, 3 skipped.
+  - Full test suite passing at 130 passed, 3 skipped, 170 subtests passed.
 
 ### Changed
-- **`spec-execute/SKILL.md`**: Integrated Orca wave dispatching, child worktree placement, TUI idle synchronization, and supervised PTY event loops.
+- **`spec-execute/SKILL.md`**: Integrated Orca wave dispatching, child worktree placement, TUI idle synchronization, and supervised PTY event loops. Relaxed the prior blanket "do not add a new Kanban" rule into a named, execution-only exception for the Task Board that supplements (never replaces) the required flowchart.
 - **`spec-audit/SKILL.md`**: Integrated parallel reviewer dispatch and structured `audit_findings.json` emission.
-- **`spec-tasks/SKILL.md`**, **`spec-driven/SKILL.md`**, and **`spec-driven/references/artifacts.md`**: Synchronized `sidecars/` subfolder layout and 4-color flowchart status standards.
+- **`spec-tasks/SKILL.md`**, **`spec-driven/SKILL.md`**, and **`spec-driven/references/artifacts.md`**: Synchronized `sidecars/` subfolder layout, 4-color flowchart status standards, and the new Task Board section.
+- **`spec-driven/references/diagrams.md`**: Documented the "structured source exists but no IR family covers it yet" case (e.g. `kanban`) alongside the existing IR-generation/hand-authoring split, and added the Task Board to the phase decision matrix.
 - **`spec-driven/scripts/spec-check.py`**: Enhanced with `sidecars/` subfolder lookup, SHA-256 freshness tracking across all 6 spec artifacts, and in-memory 3-way traceability validation.
