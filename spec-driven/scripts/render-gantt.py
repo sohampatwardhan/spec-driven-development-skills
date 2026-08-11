@@ -270,10 +270,15 @@ def build_flowchart_from_tasks_data(
         {"id": f"stage-{stage}", "label": f"Stage {stage}"}
         for stage in sorted(stages)
     ]
-    return render_mermaid_ir({
+    diagram = render_mermaid_ir({
         "diagram": "graph", "target": "flowchart", "direction": "TD",
         "groups": groups, "nodes": nodes, "edges": edges,
     })
+    return diagram.replace(
+        "```mermaid\n",
+        "```mermaid\n%%{init: {'flowchart': {'defaultRenderer': 'elk'}}}%%\n",
+        1
+    )
 
 
 _KANBAN_COLUMNS: List[Tuple[str, str]] = [

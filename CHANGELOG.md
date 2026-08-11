@@ -18,7 +18,7 @@ All notable changes to the Spec-Driven Development Skills suite are documented i
   - Added [`spec-driven/references/agent-cli-flags.md`](spec-driven/references/agent-cli-flags.md) reference guide.
 - **Deterministic Mermaid Visualization**:
   - Implemented [`spec-driven/scripts/render-gantt.py`](spec-driven/scripts/render-gantt.py) to deterministically generate syntax-error-free Mermaid Gantt charts in `05_execution.md` from `05_execution.json` timing intervals, with safe handling of 0-second and sub-second task durations.
-  - Added deterministic 4-color Mermaid flowchart generator (`build_flowchart_from_tasks_data()`) for `04_tasks.md` Stage and Dependency Overview:
+  - Added deterministic 4-color Mermaid flowchart generator (`build_flowchart_from_tasks_data()`) for `04_tasks.md` Stage and Dependency Overview, leveraging the ELK layout renderer (`%%{init: {'flowchart': {'defaultRenderer': 'elk'}}}%%`) to minimize edge overlap.
     - **Grey (`pending`)**: `fill:#f1f5f9,stroke:#94a3b8` (not started/queued)
     - **Red (`failed`)**: `fill:#fee2e2,stroke:#ef4444` (verification defect)
     - **Amber (`in_progress`)**: `fill:#fef3c7,stroke:#f59e0b` (active executing wave)

@@ -212,6 +212,12 @@ class RenderGanttTests(unittest.TestCase):
         self.assertIn("class n_1_3 failed", diagram)
         self.assertIn("class n_1_4 pending", diagram)
 
+    def test_flowchart_uses_elk_renderer(self) -> None:
+        tasks_data = {"tasks": [{"id": "1.1", "title": "T", "stage": 1, "depends_on": [], "checked": False}]}
+        diagram = render_gantt.build_flowchart_from_tasks_data(tasks_data)
+        self.assertIn("%%{init: {'flowchart': {'defaultRenderer': 'elk'}}}%%", diagram)
+        self.assertIn("flowchart TD", diagram)
+
     def test_embedded_sidecar_gantt_ir_is_authoritative(self) -> None:
         embedded = {
             "diagram": "timeline", "target": "gantt", "dateFormat": "YYYY-MM-DD",

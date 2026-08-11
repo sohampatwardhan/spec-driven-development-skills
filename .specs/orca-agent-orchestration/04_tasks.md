@@ -7,107 +7,61 @@
 ## Stage and Dependency Overview
 
 ```mermaid
+%%{init: {'flowchart': {'defaultRenderer': 'elk'}}}%%
 flowchart TD
-    subgraph Stage_1["Stage 1"]
-        t_1_1["1.1: Update spec-family contract with Orca ru"]
-        t_1_2["1.2: Register formal JSON Schemas in contract"]
-        t_1_3["1.3: Author reference documentation for agent"]
-    end
-    subgraph Stage_2["Stage 2"]
-        t_2_1["2.1: Implement spec-orca.py bridge utility fo"]
-        t_2_2["2.2: Implement render-gantt.py deterministic "]
-        t_2_3["2.3: Enhance spec-check.py with sidecars fold"]
-    end
-    subgraph Stage_3["Stage 3"]
-        t_3_1["3.1: Update spec-execute skill with Orca wave"]
-        t_3_2["3.2: Update spec-audit skill with parallel re"]
-        t_3_3["3.3: Update spec-tasks, spec-finish, and spec"]
-    end
-    subgraph Stage_4["Stage 4"]
-        t_4_1["4.1: Extend test_sidecars.py test suite for a"]
-        t_4_2["4.2: Implement test_spec_orca.py test suite f"]
-        t_4_3["4.3: Implement test_render_gantt.py test suit"]
-        t_4_4["4.4: Run full test verification, execute spec"]
-    end
-    t_1_1 --> t_2_1
-    t_1_2 --> t_2_1
-    t_1_2 --> t_2_2
-    t_1_1 --> t_2_3
-    t_1_2 --> t_2_3
-    t_2_1 --> t_3_1
-    t_2_2 --> t_3_1
-    t_2_3 --> t_3_1
-    t_2_1 --> t_3_2
-    t_2_3 --> t_3_2
-    t_2_3 --> t_3_3
-    t_3_3 --> t_4_1
-    t_3_1 --> t_4_2
-    t_3_1 --> t_4_3
-    t_3_1 --> t_4_4
-    t_3_2 --> t_4_4
-    t_3_3 --> t_4_4
-
-    classDef pending fill:#f1f5f9,stroke:#94a3b8,stroke-width:1.5px,color:#334155;
-    classDef failed fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#991b1b;
-    classDef in_progress fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#92400e;
-    classDef done fill:#dcfce7,stroke:#22c55e,stroke-width:1.5px,color:#14532d;
-
-    class t_1_1,t_1_2,t_1_3,t_2_1,t_2_2,t_2_3,t_3_1,t_3_2,t_3_3,t_4_1,t_4_2,t_4_3,t_4_4 done;
+  classDef done fill:#dcfce7,stroke:#22c55e,stroke-width:1.5px,color:#14532d
+  subgraph n_stage_1["Stage 1"]
+    n_1_1@{ shape: rect, label: "1.1: Update spec-family contract with Orca ru" }
+    n_1_2@{ shape: rect, label: "1.2: Register formal JSON Schemas in contract" }
+    n_1_3@{ shape: rect, label: "1.3: Author reference documentation for agent" }
+  end
+  subgraph n_stage_2["Stage 2"]
+    n_2_1@{ shape: rect, label: "2.1: Implement spec-orca.py bridge utility fo" }
+    n_2_2@{ shape: rect, label: "2.2: Implement render-gantt.py deterministic " }
+    n_2_3@{ shape: rect, label: "2.3: Enhance spec-check.py with sidecars fold" }
+  end
+  subgraph n_stage_3["Stage 3"]
+    n_3_1@{ shape: rect, label: "3.1: Update spec-execute skill with Orca wave" }
+    n_3_2@{ shape: rect, label: "3.2: Update spec-audit skill with parallel re" }
+    n_3_3@{ shape: rect, label: "3.3: Update spec-tasks, spec-finish, and spec" }
+  end
+  subgraph n_stage_4["Stage 4"]
+    n_4_1@{ shape: rect, label: "4.1: Extend test_sidecars.py test suite for a" }
+    n_4_2@{ shape: rect, label: "4.2: Implement test_spec_orca.py test suite f" }
+    n_4_3@{ shape: rect, label: "4.3: Implement test_render_gantt.py test suit" }
+    n_4_4@{ shape: rect, label: "4.4: Run full test verification, execute spec" }
+  end
+  n_1_1 --> n_2_1
+  n_1_2 --> n_2_1
+  n_1_2 --> n_2_2
+  n_1_1 --> n_2_3
+  n_1_2 --> n_2_3
+  n_2_1 --> n_3_1
+  n_2_2 --> n_3_1
+  n_2_3 --> n_3_1
+  n_2_1 --> n_3_2
+  n_2_3 --> n_3_2
+  n_2_3 --> n_3_3
+  n_3_3 --> n_4_1
+  n_3_1 --> n_4_2
+  n_3_1 --> n_4_3
+  n_3_1 --> n_4_4
+  n_3_2 --> n_4_4
+  n_3_3 --> n_4_4
+  class n_1_1 done
+  class n_1_2 done
+  class n_1_3 done
+  class n_2_1 done
+  class n_2_2 done
+  class n_2_3 done
+  class n_3_1 done
+  class n_3_2 done
+  class n_3_3 done
+  class n_4_1 done
+  class n_4_2 done
+  class n_4_3 done
+  class n_4_4 done
 ```
-
-
-## Stage and Dependency Overview
-
-```mermaid
-flowchart TD
-    subgraph Stage_1["Stage 1"]
-        t_1_1["1.1: Update spec-family contract with Orca ru"]
-        t_1_2["1.2: Register formal JSON Schemas in contract"]
-        t_1_3["1.3: Author reference documentation for agent"]
-    end
-    subgraph Stage_2["Stage 2"]
-        t_2_1["2.1: Implement spec-orca.py bridge utility fo"]
-        t_2_2["2.2: Implement render-gantt.py deterministic "]
-        t_2_3["2.3: Enhance spec-check.py with sidecars fold"]
-    end
-    subgraph Stage_3["Stage 3"]
-        t_3_1["3.1: Update spec-execute skill with Orca wave"]
-        t_3_2["3.2: Update spec-audit skill with parallel re"]
-        t_3_3["3.3: Update spec-tasks, spec-finish, and spec"]
-    end
-    subgraph Stage_4["Stage 4"]
-        t_4_1["4.1: Extend test_sidecars.py test suite for a"]
-        t_4_2["4.2: Implement test_spec_orca.py test suite f"]
-        t_4_3["4.3: Implement test_render_gantt.py test suit"]
-        t_4_4["4.4: Run full test verification, execute spec"]
-    end
-    t_1_1 --> t_2_1
-    t_1_2 --> t_2_1
-    t_1_2 --> t_2_2
-    t_1_1 --> t_2_3
-    t_1_2 --> t_2_3
-    t_2_1 --> t_3_1
-    t_2_2 --> t_3_1
-    t_2_3 --> t_3_1
-    t_2_1 --> t_3_2
-    t_2_3 --> t_3_2
-    t_2_3 --> t_3_3
-    t_3_3 --> t_4_1
-    t_3_1 --> t_4_2
-    t_3_1 --> t_4_3
-    t_3_1 --> t_4_4
-    t_3_2 --> t_4_4
-    t_3_3 --> t_4_4
-
-    classDef pending fill:#f1f5f9,stroke:#94a3b8,stroke-width:1.5px,color:#334155;
-    classDef failed fill:#fee2e2,stroke:#ef4444,stroke-width:2px,color:#991b1b;
-    classDef in_progress fill:#fef3c7,stroke:#f59e0b,stroke-width:2px,color:#92400e;
-    classDef done fill:#dcfce7,stroke:#22c55e,stroke-width:1.5px,color:#14532d;
-
-    class t_1_1,t_1_2,t_1_3,t_2_1,t_2_2,t_2_3,t_3_1,t_3_2,t_3_3,t_4_1,t_4_2,t_4_3,t_4_4 done;
-```
-
-
 ## Stage 1: Contract, Schemas & Reference Foundations
 
 - [x] 1. Foundations and Core Schemas
