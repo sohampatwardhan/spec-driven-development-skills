@@ -27,7 +27,8 @@ orca orchestration run-list --json
 
 ### 2. Task DAG Creation
 
-Tasks represent discrete work nodes with explicit prerequisites and parent-child hierarchy.
+Tasks represent discrete work nodes with explicit prerequisites. `--parent` records flat grouping
+metadata; Orca does not enforce recursive coordinator ownership or cascade lifecycle operations.
 
 ```bash
 # Create a root or child task
@@ -90,8 +91,8 @@ The coordinator listens for events using `check --wait`:
 # Listen for worker completion, escalations, or questions
 orca orchestration check --wait --types worker_done,escalation,question --timeout-ms 30000 --json
 
-# Answer a worker question
-orca orchestration send --type reply --to <worker_handle> --payload '{"answer": "..."}'
+# Answer a worker question using the message id from the `question` event
+orca orchestration reply --id <message_id> --body "<answer>" --json
 
 # Release terminal after worker_done — ends the agent's session
 orca orchestration worker-release --dispatch <dispatch_id> --json
@@ -107,10 +108,11 @@ explicitly removed — don't let per-task worktrees accumulate past the point th
 integrated. Do not remove a worktree before its changes are integrated, and never remove one still
 holding unreviewed or unmerged work without explicit confirmation.
 
-This lifecycle is recursive: a worker that becomes a coordinator for its own sub-workers (nested
-`--parent` task hierarchy) owns ending each child's session and removing each child's worktree
-before it reports its own `worker_done` upward. Cleanup does not skip levels — a top-level sweep
-cannot see a worktree a nested worker never reported creating.
+This skill applies that lifecycle recursively as a manual convention: a worker that becomes a
+coordinator for its own sub-workers owns ending each child's session and removing each child's
+worktree before it reports its own `worker_done` upward. Orca stores `--parent` as flat metadata;
+it does not track nested coordinators, cascade cleanup, or detect a skipped level. A top-level
+coordinator therefore cannot recover a worktree that a nested worker never reported creating.
 
 ---
 

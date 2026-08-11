@@ -56,30 +56,28 @@
       }
     },
     "cursor": {
-      "binary": "cursor-agent",
-      "unattended_flags": ["--approve-all", "--headless"],
+      "binary": "agent",
+      "unattended_flags": ["--print", "--force", "--trust"],
       "model_flag": "--model",
-      "effort_flag": "--thinking-level",
       "role_overrides": {
         "implementer": {
-          "unattended_flags": ["--approve-all", "--headless"]
+          "unattended_flags": ["--print", "--force", "--trust"]
         },
         "reviewer": {
-          "unattended_flags": ["--headless", "--read-only"]
+          "unattended_flags": ["--print", "--mode", "ask", "--trust"]
         }
       }
     },
     "opencode": {
       "binary": "opencode",
-      "unattended_flags": ["--auto-confirm", "--yes"],
+      "unattended_flags": ["run", "--auto"],
       "model_flag": "--model",
-      "effort_flag": "--reasoning",
       "role_overrides": {
         "implementer": {
-          "unattended_flags": ["--auto-confirm", "--yes"]
+          "unattended_flags": ["run", "--auto"]
         },
         "reviewer": {
-          "unattended_flags": ["--read-only"]
+          "unattended_flags": ["run", "--auto", "--agent", "plan"]
         }
       }
     }

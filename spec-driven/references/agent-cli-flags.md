@@ -28,11 +28,11 @@ already confined to an isolated worktree where the blast radius of a wrong actio
 Anthropic Claude Code is an agentic terminal tool.
 
 - **Unattended Flag**: `--permission-mode bypassPermissions` (equivalently `--dangerously-skip-permissions`)
-  - `--permission-mode auto` does **not** exist — valid modes are `default`/`manual`, `acceptEdits`, `plan`, `bypassPermissions`. Passing `auto` either errors or silently falls back to a prompting mode, which is a direct cause of unattended-worker hangs.
+  - `--permission-mode auto` is real, but it still routes ambiguous actions through a safety-check classifier and can pause for input that an unattended worker cannot provide. Use `bypassPermissions` only inside an appropriately isolated environment when the worker must never prompt. Permission-mode names are version-dependent; Claude Code 2.1.228 reports `acceptEdits`, `auto`, `bypassPermissions`, `manual`, `dontAsk`, and `plan`.
 - **Model Flag**: `--model <model-id>` — resolve the current model id/alias live rather than hardcoding one; Anthropic's model lineup changes.
-- **Effort Flag**: `--effort <low|medium|high|xhigh>`
+- **Effort Flag**: `--effort <level>` — resolve accepted values with the installed `claude --help` or `/effort`; this set has changed repeatedly and some values are version-gated.
 - **Non-Interactive Print**: `-p "<prompt>"` / `--print`
-- **Read-only role**: `--permission-mode plan` restricts to planning without edits. `--allowedTools`/a CLI tool-allowlist flag was deprecated in favor of the `permissions.allow`/`deny`/`ask` block in `.claude/settings.json` — there is no current CLI flag equivalent; scope a reviewer/explorer role via a settings file in its worktree, not a hand-typed flag.
+- **Read-only role**: `--permission-mode plan` restricts to planning without edits. Current `--allowedTools`/`--disallowedTools` CLI flags add per-invocation tool rules alongside the `permissions.allow`/`deny`/`ask` block in `.claude/settings.json`; they were not removed with the similarly named legacy config-file field.
 - **Optional safety net for a bypass-mode implementer**: a short `permissions.deny` list in `.claude/settings.json` for genuinely destructive Bash patterns (e.g. `Bash(rm -rf:*)`, `Bash(git push --force:*)`) fails those closed even under `bypassPermissions`, without reintroducing a hang-prone prompt for everything else.
 
 #### Example Invocations
@@ -54,18 +54,19 @@ claude -p "Explain architecture in src/core.py" --output-format json
 OpenAI Codex is a CLI agent for terminal workflows. Use the `codex exec` subcommand for scripted/non-interactive automation.
 
 - **Unattended Flag**: `--ask-for-approval never --sandbox workspace-write`
-  - `--approve-for-me` does **not** exist — it is not a Codex flag. `--ask-for-approval` accepts `untrusted` (default, escalates most commands), `on-request`/`on-failure`, or `never` (no prompts, ever — required for an unattended worker). Pair `never` with a sandbox mode so risky actions fail closed instead of running unconstrained: `workspace-write` allows edits inside the worktree and blocks network/out-of-worktree writes; `read-only` blocks all edits; `danger-full-access` (or `--dangerously-bypass-approvals-and-sandbox` / `--yolo`, which sets both `never` and `danger-full-access` at once) removes the sandbox entirely and should only be used for a worker already confined to an isolated, disposable worktree.
+  - `--ask-for-approval` accepts `untrusted`, `on-request`, or `never`; `on-failure` is only a legacy persisted-config alias, not a CLI value. Do not assume a default across releases. Current Codex also has `--approve-for-me`, which routes approvals through automatic review, but the deterministic fail-closed unattended policy remains `never` plus a sandbox. Pair `never` with `workspace-write` so risky actions fail closed instead of running unconstrained: `workspace-write` allows edits inside the worktree and blocks network/out-of-worktree writes; `read-only` blocks all edits; `danger-full-access` (or `--dangerously-bypass-approvals-and-sandbox` / `--yolo`, which sets both `never` and `danger-full-access` at once) removes the sandbox entirely and should only be used for a worker already confined to an isolated, disposable worktree.
+  - For `codex exec`, place `--ask-for-approval` before the `exec` subcommand. Codex 0.147.0 rejects it when placed after `exec`; `--sandbox` is accepted in either position.
 - **Model Flag**: `--model <model-id>` — resolve live; do not hardcode a specific model string here.
-- **Effort Flag**: `-c model_reasoning_effort="<low|medium|high>"` (the general `-c key=value` config-override syntax)
+- **Effort Flag**: `-c model_reasoning_effort="<low|medium|high|xhigh>"` (the general `-c key=value` config-override syntax)
 - **Reviewer Sandbox**: `--sandbox read-only --ask-for-approval never`
 
 #### Example Invocations
 ```bash
 # Implementer (edits allowed in-worktree; network/out-of-worktree writes fail closed, never prompts)
-codex exec --ask-for-approval never --sandbox workspace-write --model <model-id> -c model_reasoning_effort="medium" "<task>"
+codex --ask-for-approval never --sandbox workspace-write exec --model <model-id> -c model_reasoning_effort="medium" "<task>"
 
 # Read-only Reviewer
-codex exec --sandbox read-only --ask-for-approval never --model <model-id> "<task>"
+codex --ask-for-approval never --sandbox read-only exec --model <model-id> "<task>"
 ```
 
 ---
@@ -88,25 +89,25 @@ agy -p "<task>" --dangerously-skip-permissions --model <model-id> --effort high
 
 ---
 
-### 4. Cursor CLI (`cursor-agent`)
+### 4. Cursor CLI (`agent`)
 
-Cursor headless CLI agent. **Unverified against current docs** — check before trusting for a dispatch that matters.
+Cursor headless CLI agent.
 
-- **Unattended Flags**: `--approve-all`, `--headless`
+- **Unattended Flags**: `-p`/`--print` for non-interactive output plus `-f`/`--force` (alias `--yolo`) to allow commands unless explicitly denied. Add `--trust` when the workspace has not already been trusted.
 - **Model Flag**: `--model <model-id>` — resolve live; do not hardcode a specific model string.
-- **Thinking Flag**: `--thinking-level <low|medium|high>`
+- **Effort control**: no current general reasoning/effort CLI flag is documented; select a model with `--model` instead.
+- **Read-only role**: `--mode ask` (or `--mode=ask`) selects Ask mode for read-only exploration.
 
 #### Example Invocations
 ```bash
-cursor-agent --approve-all --headless --model <model-id>
+agent -p -f --trust --model <model-id> "<task>"
 ```
 
 ---
 
 ### 5. OpenCode / Pi (`opencode`)
 
-**Unverified against current docs** — check before trusting for a dispatch that matters.
-
-- **Unattended Flags**: `--auto-confirm`, `--yes`
-- **Model Flag**: `--model <model-id>`
-- **Reasoning Flag**: `--reasoning <level>`
+- **Unattended Flag**: `opencode run --auto "<task>"` auto-approves permissions that are not explicitly denied.
+- **Model Flag**: `--model <provider/model>` on `opencode run`.
+- **Reasoning control**: there is no `--reasoning` flag. Configure reasoning in `opencode.json` or agent front matter; some releases also expose provider-specific model variants rather than a portable reasoning level.
+- **Read-only role**: select the built-in read-only Plan agent with `opencode run --agent plan`; combining it with `--auto` still preserves its explicit edit denials.
