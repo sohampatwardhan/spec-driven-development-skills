@@ -94,6 +94,8 @@ class DependencyAuditAcceptanceTests(unittest.TestCase):
         self.root.mkdir()
         self.sbom = self.root / "bom.json"
         self.sbom.write_text(json.dumps({
+            "bomFormat": "CycloneDX",
+            "specVersion": "1.7",
             "components": [
                 {"name": "acceptance-alpha", "version": "1.0.0",
                  "purl": "pkg:pypi/acceptance-alpha@1.0.0", "bom-ref": "alpha",

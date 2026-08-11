@@ -73,17 +73,49 @@ class InventoryAdapterTests(unittest.TestCase):
         self.assertTrue(result.complete)
         self.assertEqual(len(result.dependencies), 1)
         self.assertEqual(result.packages[0].scope, DependencyScope.RUNTIME)
+        packages = {package.name: package for package in result.packages}
+        self.assertTrue(packages["requests"].direct)
+        self.assertFalse(packages["urllib3"].direct)
 
         invalid = parse_cyclonedx({"components": [{"name": "missing-version", "purl": "pkg:pypi/x@1"}]})
         self.assertFalse(invalid.complete)
         self.assertTrue(invalid.incomplete_reasons)
 
         unresolved = parse_cyclonedx({
+            "bomFormat": "CycloneDX", "specVersion": "1.7",
             "components": [{"name": "known", "version": "1.0", "purl": "pkg:pypi/known@1.0", "bom-ref": "known"}],
             "dependencies": [{"ref": "known", "dependsOn": ["not-in-components"]}],
         })
         self.assertFalse(unresolved.complete)
         self.assertTrue(any("unknown target" in reason for reason in unresolved.incomplete_reasons))
+
+    def test_cyclonedx_requires_document_identity_and_complete_graph_nodes(self) -> None:
+        component = {
+            "name": "known", "version": "1.0", "purl": "pkg:pypi/known@1.0",
+            "bom-ref": "known",
+        }
+        for payload in (
+            {"specVersion": "1.7", "components": [component], "dependencies": []},
+            {"bomFormat": "CycloneDX", "components": [component], "dependencies": []},
+            {"bomFormat": "CycloneDX", "specVersion": "9.9", "components": [component], "dependencies": []},
+        ):
+            with self.subTest(payload=payload):
+                self.assertFalse(parse_cyclonedx(payload).complete)
+
+        omitted = parse_cyclonedx({
+            "bomFormat": "CycloneDX", "specVersion": "1.7",
+            "components": [component], "dependencies": [],
+        })
+        self.assertFalse(omitted.complete)
+        self.assertTrue(any("omits bom-ref" in reason for reason in omitted.incomplete_reasons))
+
+        duplicate = parse_cyclonedx({
+            "bomFormat": "CycloneDX", "specVersion": "1.7",
+            "components": [component, dict(component)],
+            "dependencies": [{"ref": "known", "dependsOn": []}],
+        })
+        self.assertFalse(duplicate.complete)
+        self.assertTrue(any("ambiguous" in reason for reason in duplicate.incomplete_reasons))
 
     def test_duplicate_purls_are_deduplicated_and_fingerprint_is_canonical(self) -> None:
         first = parse_npm_list(load_fixture("npm-list.json"))

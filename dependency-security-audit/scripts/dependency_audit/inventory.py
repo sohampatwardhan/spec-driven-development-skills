@@ -27,6 +27,7 @@ _OUTPUT_LIMIT = 1_000_000
 _NON_EXACT_VERSION_CHARS = frozenset("<>=~^*|,")
 _SEMVER_EXACT = re.compile(r"^(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$")
 _GO_VERSION_EXACT = re.compile(r"^v(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*)(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$")
+_SUPPORTED_CYCLONEDX_VERSIONS = frozenset({"1.4", "1.5", "1.6", "1.7"})
 _SCOPE_PRECEDENCE = {
     DependencyScope.UNKNOWN: 0,
     DependencyScope.DEVELOPMENT: 1,
@@ -359,7 +360,13 @@ def parse_cyclonedx(payload: object) -> InventoryResult:
     reference.  Missing versions or dependency references are incomplete because
     an SBOM with an unresolved node cannot reproduce advisory matching.
     """
-    if not isinstance(payload, Mapping) or not isinstance(payload.get("components"), list):
+    if not isinstance(payload, Mapping):
+        return _invalid_result("cyclonedx", "CycloneDX response is not an object")
+    if payload.get("bomFormat") != "CycloneDX":
+        return _invalid_result("cyclonedx", "CycloneDX response lacks bomFormat=CycloneDX")
+    if payload.get("specVersion") not in _SUPPORTED_CYCLONEDX_VERSIONS:
+        return _invalid_result("cyclonedx", "CycloneDX response has an unsupported specVersion")
+    if not isinstance(payload.get("components"), list):
         return _invalid_result("cyclonedx", "CycloneDX response lacks components")
     packages: list[PackageRef] = []
     refs: dict[str, str] = {}
@@ -388,10 +395,21 @@ def parse_cyclonedx(payload: object) -> InventoryResult:
         ecosystem = _purl_type(purl) or "unknown"
         scope = DependencyScope.RUNTIME if component.get("scope") == "required" else DependencyScope.UNKNOWN
         packages.append(PackageRef(ecosystem, name, str(version), purl, False, scope, bom_ref))
-        if bom_ref in refs and refs[bom_ref] != purl:
+        if bom_ref in refs:
             reasons.append(f"CycloneDX bom-ref {bom_ref!r} is ambiguous")
         refs[bom_ref] = purl
+    metadata = payload.get("metadata")
+    metadata_component = metadata.get("component") if isinstance(metadata, Mapping) else None
+    root_ref = metadata_component.get("bom-ref") if isinstance(metadata_component, Mapping) else None
+    if root_ref is not None and (not isinstance(root_ref, str) or not root_ref):
+        reasons.append("CycloneDX metadata component has an invalid bom-ref")
+        root_ref = None
+    if root_ref in refs:
+        reasons.append(f"CycloneDX bom-ref {root_ref!r} is ambiguous")
+
     edges: list[tuple[str, str]] = []
+    graph_sources: set[str] = set()
+    root_targets: set[str] = set()
     dependencies = payload.get("dependencies", [])
     if not isinstance(dependencies, list):
         reasons.append("CycloneDX dependencies are not a list")
@@ -402,9 +420,12 @@ def parse_cyclonedx(payload: object) -> InventoryResult:
                 continue
             source = dependency.get("ref")
             targets = dependency.get("dependsOn", [])
-            if not isinstance(source, str) or source not in refs:
+            if not isinstance(source, str) or (source not in refs and source != root_ref):
                 reasons.append("CycloneDX dependency references an unknown source")
                 continue
+            if source in graph_sources:
+                reasons.append(f"CycloneDX dependency source {source!r} is ambiguous")
+            graph_sources.add(source)
             if not isinstance(targets, list):
                 reasons.append(f"CycloneDX dependency targets for {source!r} are not a list")
                 continue
@@ -412,11 +433,23 @@ def parse_cyclonedx(payload: object) -> InventoryResult:
                 if not isinstance(target, str) or target not in refs:
                     reasons.append(f"CycloneDX dependency references an unknown target {target!r}")
                     continue
-                edges.append((refs[source], refs[target]))
+                if source == root_ref:
+                    root_targets.add(refs[target])
+                else:
+                    edges.append((refs[source], refs[target]))
+    expected_sources = set(refs)
+    if root_ref is not None:
+        expected_sources.add(root_ref)
+    for missing in sorted(expected_sources - graph_sources):
+        reasons.append(f"CycloneDX dependency graph omits bom-ref {missing!r}")
     result = _build_result("cyclonedx", packages, edges, reasons)
     inbound = {target for _, target in result.dependencies}
+    inferred_direct = root_targets if root_ref is not None else {
+        package.purl for package in result.packages if package.purl not in inbound
+    }
     result.packages = [
-        PackageRef(package.ecosystem, package.name, package.version, package.purl, package.purl not in inbound, package.scope, package.bom_ref)
+        PackageRef(package.ecosystem, package.name, package.version, package.purl,
+                   package.purl in inferred_direct, package.scope, package.bom_ref)
         for package in result.packages
     ]
     result.fingerprint = fingerprint_inventory(result.packages, result.dependencies)

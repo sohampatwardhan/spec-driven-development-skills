@@ -482,6 +482,8 @@ print(json.dumps({{"url": http.url, "packages": [[item.ecosystem, item.name, ite
         self.assertEqual(cve.value.severity, "high")
         self.assertEqual(cve.value.enrichments[0].cvss_scores, (8.1,))
         self.assertIn("inert advisory data", cve.value.enrichments[0].details)
+        self.assertIn("cveIds=CVE-2025-0001", transport.requests[1][1])
+        self.assertNotIn("cveId=", transport.requests[1][1])
 
     def test_nvd_failure_is_unavailable_without_discarding_primary(self) -> None:
         primary = OsvClient(RetryingHttpClient(FakeTransport([]))).normalize(

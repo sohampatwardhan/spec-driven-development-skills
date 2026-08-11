@@ -929,7 +929,7 @@ class NvdClient:
         if not _CVE.fullmatch(cve):
             return SourceResult(None, _status("nvd", SourceState.NOT_APPLICABLE, "invalid CVE identifier", self.endpoint))
         try:
-            payload = self.http.request_json("GET", f"{self.endpoint}?{urlencode({'cveId': cve})}")
+            payload = self.http.request_json("GET", f"{self.endpoint}?{urlencode({'cveIds': cve})}")
         except HttpRequestError as error:
             return SourceResult(None, _status("nvd", SourceState.UNAVAILABLE, self.http.last_diagnostic or str(error), self.endpoint))
         if not isinstance(payload, Mapping) or not isinstance(payload.get("vulnerabilities"), list):

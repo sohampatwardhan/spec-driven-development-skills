@@ -47,6 +47,11 @@ All notable changes to the Spec-Driven Development Skills suite are documented i
 - **`spec-driven/scripts/spec-check.py`**: Enhanced with `sidecars/` subfolder lookup, SHA-256 freshness tracking across all 6 spec artifacts, and in-memory 3-way traceability validation.
 
 ### Fixed
+- **Dependency security source compatibility**: Updated NVD CVE 2.0 lookups from the deprecated
+  `cveId` parameter to `cveIds`. Hardened CycloneDX ingestion to require the standard
+  `bomFormat`/`specVersion` identity, accept the specification's metadata-component graph root,
+  derive direct dependencies from that root, and fail closed when component graph nodes are
+  omitted. Added regression coverage for both current API contracts.
 - **`spec-driven/scripts/spec-check.py`**: `--emit-json` is now the default behavior of every
   invocation instead of an opt-in flag — a caller who runs a plain `spec-check.py <spec-dir>`
   after writing/updating `00_state.md`, `04_tasks.md`, or `05_execution.md` now gets a current
