@@ -132,7 +132,11 @@ user names a feature that has no project-local `.specs/<feature-slug>/` folder y
   its repository index is current, invoke [`codebase-memory-reference`](../codebase-memory-reference/SKILL.md) and use graph tools first
   for architecture, symbols, callers, dependencies, data flow, and impact. Verify config and
   runtime claims with authoritative files and tests; fall back to ordinary repository discovery
-  whenever the graph is unavailable, stale, truncated, or inconclusive.
+  whenever the graph is unavailable, stale, truncated, or inconclusive. Treat indexing as a
+  controller-owned, serialized operation: one controller or designated explorer may make one
+  authorized `index_repository` attempt for a repository, then share bounded evidence with the
+  workers. Parallel workers must not index independently or retry after a session-visibility or
+  project-name mismatch; they fall back to scoped source discovery instead.
 - **Retrieval over this family's own artifacts is exact, not approximate — keep it that way.**
   The `R1.2` → `Validates: Requirements 1.2` → `_Requirements: 1.2_` traceability chain, and the
   `04_tasks.json`/`05_execution.json`/`02_requirements.json` sidecars, are already an ID-addressed
