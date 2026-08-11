@@ -59,6 +59,7 @@
       "binary": "agent",
       "unattended_flags": ["--print", "--force", "--trust"],
       "model_flag": "--model",
+      "effort_flag": "",
       "role_overrides": {
         "implementer": {
           "unattended_flags": ["--print", "--force", "--trust"]
@@ -72,6 +73,7 @@
       "binary": "opencode",
       "unattended_flags": ["run", "--auto"],
       "model_flag": "--model",
+      "effort_flag": "",
       "role_overrides": {
         "implementer": {
           "unattended_flags": ["run", "--auto"]
