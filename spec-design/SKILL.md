@@ -87,8 +87,11 @@ designing. Resolve the active `spec-driven` skill directory and use its
    backend is added, per `ir.md`'s stated purpose. Use a flowchart only for control flow, hand-authored
    directly with the `mermaid` skill (branching control flow rarely reduces cleanly to
    nodes/edges/groups the way composition or data-model diagrams do); it must follow the Mermaid
-   skill's ISO 5807 flowchart profile (semantic shapes and labelled decision branches). Do not add
-   decorative diagrams. **Show the rendered image in chat; embed the ```mermaid source in
+   skill's ISO 5807 flowchart profile (semantic shapes and labelled decision branches). If a
+   generated or hand-authored diagram turns out dense (many entities/states/nodes), apply the
+   `mermaid` skill's ELK layout guidance rather than leaving an overlapping default-layout diagram
+   in the design doc — confirmed today for `erDiagram`, `stateDiagram-v2`, `flowchart`, and
+   `mindmap`. Do not add decorative diagrams. **Show the rendered image in chat; embed the ```mermaid source in
    `03_design.md`** (raw fences don't render in the Claude app, but do on GitHub), and keep the
    source IR JSON alongside it in `.specs/<slug>/diagrams/` so both stay in sync. Treat the diagram
    as ordinary documentation.

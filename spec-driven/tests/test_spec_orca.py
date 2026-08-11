@@ -59,8 +59,11 @@ class SpecOrcaTests(unittest.TestCase):
 
     def test_profiles_match_current_installed_cli_flags(self) -> None:
         agents = spec_orca.load_agent_profiles()["agents"]
-        self.assertEqual(["--permission-mode", "auto"], agents["claude"]["unattended_flags"])
-        self.assertEqual(["--approve-for-me"], agents["codex"]["unattended_flags"])
+        self.assertEqual(["--permission-mode", "bypassPermissions"], agents["claude"]["unattended_flags"])
+        self.assertEqual(
+            ["--ask-for-approval", "never", "--sandbox", "workspace-write"],
+            agents["codex"]["unattended_flags"],
+        )
         self.assertEqual(
             ["--dangerously-skip-permissions"], agents["agy"]["unattended_flags"]
         )
@@ -148,14 +151,24 @@ class SpecOrcaTests(unittest.TestCase):
         plans = spec_orca.get_ready_dispatches(self.spec_dir)
         self.assertEqual(["1.1"], [plan["task_id"] for plan in plans])
         self.assertEqual(
-            ["claude", "--permission-mode", "auto", "--model", "claude-sonnet-5", "--effort", "medium"],
+            ["claude", "--permission-mode", "bypassPermissions", "--model", "claude-sonnet-5", "--effort", "medium"],
             plans[0]["command_argv"],
         )
         codex = spec_orca.get_ready_dispatches(
             self.spec_dir, agent_override="codex", model_override="gpt-5.5"
         )[0]
         self.assertEqual(
-            ["codex", "--approve-for-me", "--model", "gpt-5.5", "-c", "model_reasoning_effort=medium"],
+            [
+                "codex",
+                "--ask-for-approval",
+                "never",
+                "--sandbox",
+                "workspace-write",
+                "--model",
+                "gpt-5.5",
+                "-c",
+                "model_reasoning_effort=medium",
+            ],
             codex["command_argv"],
         )
         self.assertNotIn("gemini", codex["command"].lower())

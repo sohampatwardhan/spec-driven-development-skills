@@ -92,6 +92,10 @@ home-directory path.
   - **Amber (`in_progress`)**: `fill:#fef3c7,stroke:#f59e0b` — tasks currently executing in an active wave.
   - **Green (`done`)**: `fill:#dcfce7,stroke:#22c55e` — verified completed tasks with checked status.
   Label task nodes with the task ID and a concise title; include every leaf and every declared dependency exactly once.
+  The generator emits `%%{init: {'flowchart': {'defaultRenderer': 'elk'}}}%%` ahead of `flowchart TD`
+  so multi-stage dependency graphs render with the ELK layout instead of dagre — these graphs
+  routinely have enough subgraphs/edges to cross lines under the default layout (see the `mermaid`
+  skill's ELK guidance). Don't strip that line by hand; it's regenerated on every run.
   `spec-execute` regenerates this diagram (fresh status colors) at the same points it refreshes
   the Execution Gantt — a checkpoint, an intentional return, or run completion — not after every
   single task, so the diagram stays live without a render-validate cycle on every checkbox flip.

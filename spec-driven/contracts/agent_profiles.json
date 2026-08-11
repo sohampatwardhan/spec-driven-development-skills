@@ -3,31 +3,31 @@
   "agents": {
     "claude": {
       "binary": "claude",
-      "unattended_flags": ["--permission-mode", "auto"],
+      "unattended_flags": ["--permission-mode", "bypassPermissions"],
       "model_flag": "--model",
       "effort_flag": "--effort",
       "effort_map": {"extra_high": "xhigh"},
       "role_overrides": {
         "implementer": {
-          "unattended_flags": ["--permission-mode", "auto"]
+          "unattended_flags": ["--permission-mode", "bypassPermissions"]
         },
         "reviewer": {
-          "unattended_flags": ["--permission-mode", "plan", "--tools", "Read,Grep,Glob"]
+          "unattended_flags": ["--permission-mode", "plan"]
         },
         "explorer": {
-          "unattended_flags": ["--permission-mode", "plan", "--tools", "Read,Grep,Glob"]
+          "unattended_flags": ["--permission-mode", "plan"]
         }
       }
     },
     "codex": {
       "binary": "codex",
-      "unattended_flags": ["--approve-for-me"],
+      "unattended_flags": ["--ask-for-approval", "never", "--sandbox", "workspace-write"],
       "model_flag": "--model",
       "effort_flag": "-c model_reasoning_effort=",
       "effort_map": {"extra_high": "xhigh"},
       "role_overrides": {
         "implementer": {
-          "unattended_flags": ["--approve-for-me"]
+          "unattended_flags": ["--ask-for-approval", "never", "--sandbox", "workspace-write"]
         },
         "reviewer": {
           "unattended_flags": ["--sandbox", "read-only", "--ask-for-approval", "never"]

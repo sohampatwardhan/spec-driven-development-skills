@@ -50,11 +50,15 @@ orca orchestration worker-start \
   --task <task_id> \
   --worktree new-child \
   --agent claude \
-  --model claude-3-7-sonnet \
+  --model <model-id> \
   --effort high \
   --setup run \
   --json
 ```
+
+Resolve `<model-id>` live (installed CLI's own model listing, or Context7 for the vendor's current
+docs) rather than hardcoding a specific model string — model ids and slugs move fast enough that a
+name written into this file goes stale within months.
 
 For unattended flags or other custom argv, use the low-level path that Orca documents for topology `worker-start` does not express:
 
@@ -89,9 +93,24 @@ orca orchestration check --wait --types worker_done,escalation,question --timeou
 # Answer a worker question
 orca orchestration send --type reply --to <worker_handle> --payload '{"answer": "..."}'
 
-# Release terminal after worker_done
+# Release terminal after worker_done — ends the agent's session
 orca orchestration worker-release --dispatch <dispatch_id> --json
+
+# Once the worker's changes are integrated (merged/cherry-picked) or confirmed unneeded,
+# remove any worktree created for it — worker-release does not do this
+orca worktree rm --worktree <selector> --force --json
 ```
+
+`worker-release` ends the session; it does not delete the worktree. A worker dispatched into a
+child worktree (`--worktree new-child`/`new-top-level`) leaves that checkout behind until it is
+explicitly removed — don't let per-task worktrees accumulate past the point their changes are
+integrated. Do not remove a worktree before its changes are integrated, and never remove one still
+holding unreviewed or unmerged work without explicit confirmation.
+
+This lifecycle is recursive: a worker that becomes a coordinator for its own sub-workers (nested
+`--parent` task hierarchy) owns ending each child's session and removing each child's worktree
+before it reports its own `worker_done` upward. Cleanup does not skip levels — a top-level sweep
+cannot see a worktree a nested worker never reported creating.
 
 ---
 
