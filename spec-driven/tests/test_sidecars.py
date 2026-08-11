@@ -498,7 +498,7 @@ class SidecarFreshnessTests(unittest.TestCase):
             self.assertTrue(any("04_tasks.json is stale" in error for error in stale_errors))
 
             result = subprocess.run(
-                ["python3", str(SCRIPT), str(spec_dir), "--format", "json"],
+                ["python3", str(SCRIPT), str(spec_dir), "--check-only", "--format", "json"],
                 check=False, capture_output=True, text=True,
             )
             payload = json.loads(result.stdout)
@@ -585,6 +585,45 @@ class SidecarFreshnessTests(unittest.TestCase):
             # Verify freshness passes
             errors = spec_check.sidecar_freshness_errors(spec_dir)
             self.assertEqual([], errors)
+
+    def test_bare_invocation_emits_sidecars_by_default(self) -> None:
+        """A plain `spec-check.py <dir>` call, with no --emit-json, must still write the
+        sidecars — this is the whole point of making emission the default: a caller who forgets
+        the flag still ends up with a current 00_state.json/04_tasks.json, not a silent no-op."""
+        with tempfile.TemporaryDirectory() as directory:
+            spec_dir = Path(directory) / ".specs" / "example"
+            self._write_minimal_spec(spec_dir)
+            result = subprocess.run(
+                ["python3", str(SCRIPT), str(spec_dir)],
+                check=False, capture_output=True, text=True,
+            )
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertTrue((spec_dir / "00_state.json").is_file())
+            self.assertTrue((spec_dir / "04_tasks.json").is_file())
+            self.assertEqual([], spec_check.sidecar_freshness_errors(spec_dir))
+
+    def test_check_only_never_writes_a_sidecar(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            spec_dir = Path(directory) / ".specs" / "example"
+            self._write_minimal_spec(spec_dir)
+            result = subprocess.run(
+                ["python3", str(SCRIPT), str(spec_dir), "--check-only"],
+                check=False, capture_output=True, text=True,
+            )
+            self.assertEqual(0, result.returncode, result.stdout + result.stderr)
+            self.assertFalse((spec_dir / "00_state.json").exists())
+            self.assertFalse((spec_dir / "04_tasks.json").exists())
+
+    def test_check_only_with_emit_json_path_is_rejected(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            spec_dir = Path(directory) / ".specs" / "example"
+            self._write_minimal_spec(spec_dir)
+            result = subprocess.run(
+                ["python3", str(SCRIPT), str(spec_dir), "--check-only", "--emit-json", str(spec_dir)],
+                check=False, capture_output=True, text=True,
+            )
+            self.assertNotEqual(0, result.returncode)
+            self.assertIn("mutually exclusive", result.stdout + result.stderr)
 
 
 if __name__ == "__main__":

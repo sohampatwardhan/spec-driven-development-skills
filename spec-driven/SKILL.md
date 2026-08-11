@@ -93,10 +93,17 @@ user names a feature that has no project-local `.specs/<feature-slug>/` folder y
   project-root-relative label and a target relative to the spec document; leave future paths as
   inline code only until they exist. `spec-check.py` enforces navigation and local file links.
 - **Keep the state sidecar current.** Whenever any phase writes or updates `00_state.md` — a
-  gate approval, an invalidation, an audit result, a checkpoint — regenerate `00_state.json` in
-  the same step with `scripts/spec-check.py <spec-dir> --emit-json`. It is a generated artifact
+  gate approval, an invalidation, an audit result, a checkpoint — run `scripts/spec-check.py
+  <spec-dir>` in the same step; regenerating `00_state.json` is the default behavior of every
+  invocation, not something that requires remembering `--emit-json`. It is a generated artifact
   like `04_tasks.json`/`05_execution.json`: never hand-maintained, and `sidecar_freshness_errors`
-  rejects it as stale on every ordinary check once its hash no longer matches `00_state.md`.
+  rejects it as stale on every ordinary check once its hash no longer matches `00_state.md`. Pass
+  `--check-only` when you specifically want validation without writing (e.g. a CI gate that must
+  fail rather than silently repair a sidecar someone forgot to regenerate); pass `--emit-json`
+  explicitly when a build failure in the sidecar itself (a malformed source doc) should fail the
+  check rather than only warn — bare, implicit emission warns instead of erroring so an
+  early-phase doc that is not yet in canonical shape (e.g. `00_state.md` before its Gate table is
+  filled in) does not fail an ordinary check that never asked for JSON at all.
 - **Keep skill references clickable.** When naming another local skill or a shared reference,
   use a relative Markdown link to its `SKILL.md` or reference file. Preserve the exact skill name
   in the link label so dependency detection and human navigation agree.

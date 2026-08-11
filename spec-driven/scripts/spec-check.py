@@ -2299,7 +2299,20 @@ def main() -> int:
         metavar="PATH",
         help=(
             "Regenerate 00_state.json/04_tasks.json/05_execution.json from the current Markdown "
-            "(into spec_dir, or PATH when given). Never hand-maintain these sidecars."
+            "(into spec_dir, or PATH when given). Emission also happens by default when this "
+            "flag is omitted, but a source doc that is not yet in canonical shape (for example "
+            "an 00_state.md still missing its Gate table) then only downgrades that automatic "
+            "attempt to a warning; pass this flag explicitly to make such a failure fatal "
+            "instead, or pass --check-only to skip emission entirely. Never hand-maintain "
+            "these sidecars."
+        ),
+    )
+    parser.add_argument(
+        "--check-only",
+        action="store_true",
+        help=(
+            "Validate without regenerating sidecars. A sidecar left stale by an edit that "
+            "skipped regeneration is reported as an error instead of being silently repaired."
         ),
     )
     args = parser.parse_args()
@@ -2389,8 +2402,12 @@ def main() -> int:
             require_timing=True,
         ))
 
-    if args.emit_json is not None:
-        target_dir = root if not args.emit_json else Path(args.emit_json).resolve()
+    if args.check_only and args.emit_json:
+        errors.append("--check-only and --emit-json PATH are mutually exclusive")
+    elif not args.check_only:
+        explicit = args.emit_json is not None
+        path_value = args.emit_json if explicit else ""
+        target_dir = root if not path_value else Path(path_value).resolve()
         if not target_dir.is_dir():
             errors.append(f"--emit-json target directory does not exist: {target_dir}")
         else:
@@ -2405,10 +2422,18 @@ def main() -> int:
                 execution_text=execution_text,
                 state_text=state_text_for_emit,
             )
-            errors.extend(emit_errors)
+            # An explicit --emit-json is a request the caller must be told failed. Implicit
+            # (flag omitted) emission is best-effort: a source doc that is not yet in canonical
+            # shape — e.g. an early-phase 00_state.md without its Gate table — must not fail an
+            # ordinary check that never asked for JSON at all; downgrade to a warning instead.
+            if explicit:
+                errors.extend(emit_errors)
+            else:
+                warnings.extend(emit_errors)
 
-    # Checked after a requested --emit-json has had the chance to refresh a stale sidecar in
-    # this same run; an unrelated stale sidecar is still caught on every ordinary invocation.
+    # Checked after the default emission (or an explicit --emit-json) has had the chance to
+    # refresh a stale sidecar in this same run; --check-only skips emission, so a stale sidecar
+    # is still caught there.
     errors.extend(sidecar_freshness_errors(root))
 
     return emit_result(args.output_format, root, criteria, task_graph, warnings, errors)

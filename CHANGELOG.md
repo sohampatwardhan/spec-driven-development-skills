@@ -37,7 +37,7 @@ All notable changes to the Spec-Driven Development Skills suite are documented i
   - Added [`spec-driven/tests/test_spec_orca.py`](spec-driven/tests/test_spec_orca.py) (5 tests) for DAG mapping, dependency blocking, decision gates, and budget routing.
   - [`spec-driven/tests/test_render_gantt.py`](spec-driven/tests/test_render_gantt.py) now has 18 tests, covering Mermaid Gantt syntax, 0-second duration protection, outcome tags, 4-color flowchart standards, Task Board kanban grouping/omission/sanitization, flowchart↔kanban status agreement, and idempotent Task Board injection.
   - Extended [`spec-driven/tests/test_sidecars.py`](spec-driven/tests/test_sidecars.py) for schema validation and `sidecars/` subfolder emission.
-  - Full test suite passing at 130 passed, 3 skipped, 170 subtests passed.
+  - Full test suite passing at 133 passed, 3 skipped, 170 subtests passed.
 
 ### Changed
 - **`spec-execute/SKILL.md`**: Integrated Orca wave dispatching, child worktree placement, TUI idle synchronization, and supervised PTY event loops. Relaxed the prior blanket "do not add a new Kanban" rule into a named, execution-only exception for the Task Board that supplements (never replaces) the required flowchart.
@@ -45,3 +45,16 @@ All notable changes to the Spec-Driven Development Skills suite are documented i
 - **`spec-tasks/SKILL.md`**, **`spec-driven/SKILL.md`**, and **`spec-driven/references/artifacts.md`**: Synchronized `sidecars/` subfolder layout, 4-color flowchart status standards, and the new Task Board section.
 - **`spec-driven/references/diagrams.md`**: Documented the "structured source exists but no IR family covers it yet" case (e.g. `kanban`) alongside the existing IR-generation/hand-authoring split, and added the Task Board to the phase decision matrix.
 - **`spec-driven/scripts/spec-check.py`**: Enhanced with `sidecars/` subfolder lookup, SHA-256 freshness tracking across all 6 spec artifacts, and in-memory 3-way traceability validation.
+
+### Fixed
+- **`spec-driven/scripts/spec-check.py`**: `--emit-json` is now the default behavior of every
+  invocation instead of an opt-in flag — a caller who runs a plain `spec-check.py <spec-dir>`
+  after writing/updating `00_state.md`, `04_tasks.md`, or `05_execution.md` now gets a current
+  sidecar without having to remember the flag, closing the exact failure mode where a phase
+  wrote `00_state.md` and validated it, but never regenerated `00_state.json` because the flag
+  was omitted. Implicit (flag-omitted) emission is best-effort: a source doc not yet in
+  canonical shape (e.g. `00_state.md` before its Gate table is filled in) downgrades the failure
+  to a warning rather than failing an ordinary check that never asked for JSON at all. Added
+  `--check-only` for validation without writing (e.g. a CI gate that must fail on a sidecar
+  someone forgot to regenerate, rather than silently repairing it); pass `--emit-json` explicitly
+  when a malformed-source build failure should be fatal instead of a warning.
