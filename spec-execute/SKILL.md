@@ -237,6 +237,26 @@ diagram in prose instead. The ledger is authoritative; the Gantt is a derived, g
 Because `05_execution.md` renders Mermaid natively, retain the validated fenced source without
 generating a redundant image unless requested.
 
+### Task Board (execution-only, conditional)
+
+`05_execution.md` may also carry a `### Task Board` kanban immediately after `### Execution
+Gantt`, grouping tasks into Pending/In Progress/Failed/Done columns from the same `04_tasks.json`
+and `05_execution.json` sidecars the flowchart reads. This is the one named exception to "do not
+add a new Kanban" below: it lives only in `05_execution.md`, and it supplements rather than
+replaces or duplicates the required `04_tasks.md` dependency flowchart. Both views must derive
+task status identically — `scripts/render-gantt.py`'s `derive_task_statuses` is the single source
+both builders call — so they can never disagree. Mermaid kanban has no render-validated per-card
+`style`/`classDef` mechanism (confirmed by direct render-validation: `style <id> fill:...` is
+misparsed as a bogus extra column, and `:::class` is a parse error), so `build_kanban_board_from_tasks_data`
+prefixes each card with a colored-circle emoji (⚪🟠🔴🟢) matching the flowchart's
+pending/in_progress/failed/done palette instead of a literal fill/stroke color. The `mermaid`
+skill has no `kanban` diagram family in its IR yet either, so this board is hand-authored
+deterministically instead of routing through `mermaid/scripts/render.py`; still render-validate
+the exact generated source before saving it, exactly as any other diagram. Regenerate it at the
+same cadence as the Execution
+Gantt: `scripts/render-gantt.py <spec-dir> --write` emits both together, and `--flowchart-only`
+(used by the per-task-update sync step below) leaves both the Gantt and the Task Board unchanged.
+
 ### Task flowchart synchronization (required when present)
 
 Treat the task checklist and execution ledger as authoritative and their JSON sidecars as the
@@ -256,7 +276,8 @@ attempt-state, or checklist update:
    with `spec-check.py <spec-dir> --ready --format json` and require `ok: true`.
 
 Whenever the checkpoint-only Gantt is regenerated, also confirm `05_execution.md` contains exactly
-one Run Intervals table, one Task Attempt Intervals table, and one Execution Gantt heading/block.
+one Run Intervals table, one Task Attempt Intervals table, one Execution Gantt heading/block, and
+— when a Task Board is present — exactly one Task Board heading/block.
 
 Use one stable color convention: orange (`in_progress`) for the latest active attempt, red
 (`failed`) when the latest attempt failed, green (`done`) only for checked and verified tasks, and
@@ -280,10 +301,13 @@ Keep execution timing separate from planned delivery scheduling. The required Ex
 observed work intervals only; any forecast Gantt must be separately labeled and must not substitute
 for the task ledger or use invented dates.
 
-Do not add a new Kanban, block, state, or dependency diagram to report progress by default. When a
-generated task flowchart already exists, keep that single derived view synchronized as required
-above. Add any other diagram only for exceptional diagnostic evidence under `spec-debugging`, and
-apply the shared diagram policy so it cannot become a competing progress source.
+Do not add a new block, state, or dependency diagram to report progress by default, and do not add
+a second Kanban or a second flowchart. The execution-only Task Board above is the sole named
+exception, and it must supplement rather than replace the required `04_tasks.md` flowchart. When a
+generated task flowchart already exists, keep that single derived view — and the Task Board, when
+present — synchronized as required above. Add any other diagram only for exceptional diagnostic
+evidence under `spec-debugging`, and apply the shared diagram policy so it cannot become a
+competing progress source.
 
 ## Context and execution budgets
 

@@ -21,6 +21,10 @@ alternatives map, a hypothesized debugging sequence).
   diagram (`scripts/check.sh` or `validate_and_render_mermaid_diagram`).
 - **No structured source:** hand-author the Mermaid source directly, as the rest of this policy
   describes, and render-validate before saving it.
+- **Structured source exists but no IR family covers it yet** (for example `kanban`, used by the
+  execution Task Board): hand-author deterministically from the same structured source instead —
+  same determinism requirement as the IR path, just without `render.py` — and render-validate
+  before saving it.
 
 Either way, the diagram still needs render-validation before it counts as verified — generation
 changes how the source is authored, not whether it's checked. This doesn't change the phase
@@ -55,6 +59,7 @@ scope absent from that source. Update or remove the diagram when the source chan
 | Tasks | Stages, checkpoints, and dependency DAG | `flowchart` | Required when topology is non-trivial |
 | Tasks | Confirmed calendar schedule | `gantt` | Conditional; never invent dates |
 | Execution | Observed run/task intervals | `gantt` | Required by `spec-execute` |
+| Execution | Task-tracking status board (Pending/In Progress/Failed/Done) | `kanban` | Conditional, execution-only — supplements, never replaces, the `04_tasks.md` flowchart |
 | Debugging evidence | Cross-component event causality or complex diagnostic branching | `sequenceDiagram` or ISO 5807-aligned `flowchart` | Exceptional |
 | Hooks | Multi-event unattended automation and safety branches | ISO 5807-aligned `flowchart` or `sequenceDiagram` | Conditional |
 | State, verification, finish | Compact status, evidence, or integration choices | Usually table/list/prose | No diagram by default |
