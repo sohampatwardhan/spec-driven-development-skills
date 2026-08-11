@@ -349,6 +349,20 @@ Before each wave:
    shared checkout.
 4. Limit the wave to available agent capacity. Keep serial/controller tasks out of the wave.
 
+**Codebase-memory-mcp usage is coordinator-only.** Step 2's disjointness check (and any other
+graph-informed task-assignment decision) is the coordinator's call to make, via one set of
+`search_graph`/`trace_path`/`get_architecture`/`index_repository` calls against the shared base
+before dispatch — never something each dispatched worker re-derives for itself. Each worker's
+injected task spec already carries the resolved files/interfaces/dependencies it needs (see the
+Orca dispatch bridge below); it does not need its own codebase-graph exploration to get oriented.
+Letting every dispatched worker's fresh session independently decide to index the same repo is
+what causes a same-path indexing stampede (many concurrent `index_repository` runs racing on one
+project, saturating CPU) — this is a real failure mode, not a hypothetical one. `auto_index` in
+`codebase-memory-mcp`'s config controls whether a session indexes automatically on first graph-tool
+use; with it enabled, this stampede can happen even without anyone explicitly calling
+`index_repository`, so treat indexing as something only the coordinator triggers deliberately, not
+something dispatched workers are ever prompted to do.
+
 ### Orca Multi-Agent Orchestration and Wave Dispatch
 
 When executing with Orca (`orca orchestration`), use [`spec-driven/scripts/spec-orca.py`](../spec-driven/scripts/spec-orca.py) to manage the Run DAG and unattended, supervised launches:
