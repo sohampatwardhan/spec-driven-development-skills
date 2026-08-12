@@ -92,6 +92,9 @@ home-directory path.
   - **Amber (`in_progress`)**: `fill:#fef3c7,stroke:#f59e0b` — tasks currently executing in an active wave.
   - **Green (`done`)**: `fill:#dcfce7,stroke:#22c55e` — verified completed tasks with checked status.
   Label task nodes with the task ID and a concise title; include every leaf and every declared dependency exactly once.
+  Keep task titles at or under 80 characters: the generator raises a `ValueError` naming the
+  offending task instead of silently truncating a longer title, so an over-length title fails
+  `--write` immediately rather than producing a diagram with mangled or missing detail.
   The generator emits `%%{init: {'flowchart': {'defaultRenderer': 'elk'}}}%%` ahead of `flowchart TD`
   so multi-stage dependency graphs render with the ELK layout instead of dagre — these graphs
   routinely have enough subgraphs/edges to cross lines under the default layout (see the `mermaid`

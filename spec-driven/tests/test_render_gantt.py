@@ -218,6 +218,26 @@ class RenderGanttTests(unittest.TestCase):
         self.assertIn("%%{init: {'flowchart': {'defaultRenderer': 'elk'}}}%%", diagram)
         self.assertIn("flowchart TD", diagram)
 
+    def test_flowchart_title_over_limit_raises_instead_of_truncating(self) -> None:
+        tasks_data = {
+            "tasks": [
+                {"id": "1.1", "title": "X" * 81, "stage": 1, "depends_on": [], "checked": False},
+            ]
+        }
+        with self.assertRaises(ValueError) as ctx:
+            render_gantt.build_flowchart_from_tasks_data(tasks_data)
+        self.assertIn("Task 1.1 title", str(ctx.exception))
+        self.assertIn("81 chars", str(ctx.exception))
+
+    def test_flowchart_title_at_limit_does_not_raise(self) -> None:
+        tasks_data = {
+            "tasks": [
+                {"id": "1.1", "title": "X" * 80, "stage": 1, "depends_on": [], "checked": False},
+            ]
+        }
+        diagram = render_gantt.build_flowchart_from_tasks_data(tasks_data)
+        self.assertIn("X" * 80, diagram)
+
     def test_embedded_sidecar_gantt_ir_is_authoritative(self) -> None:
         embedded = {
             "diagram": "timeline", "target": "gantt", "dateFormat": "YYYY-MM-DD",
@@ -285,6 +305,17 @@ class RenderGanttTests(unittest.TestCase):
         self.assertNotIn("[Title]", diagram)
         self.assertNotIn("@{x}", diagram)
         self.assertIn("Bad Title", diagram)
+
+    def test_kanban_title_over_limit_raises_instead_of_truncating(self) -> None:
+        tasks_data = {
+            "tasks": [
+                {"id": "1.1", "title": "X" * 61, "stage": 1, "depends_on": [], "checked": False},
+            ]
+        }
+        with self.assertRaises(ValueError) as ctx:
+            render_gantt.build_kanban_board_from_tasks_data(tasks_data)
+        self.assertIn("Task 1.1 title", str(ctx.exception))
+        self.assertIn("61 chars", str(ctx.exception))
 
     def test_flowchart_and_kanban_agree_on_task_status(self) -> None:
         tasks_data = {

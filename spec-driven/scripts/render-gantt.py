@@ -58,15 +58,30 @@ def render_mermaid_ir(ir: Dict[str, Any]) -> str:
     return f"```mermaid\n{source}\n```"
 
 
-def _sanitize_label(text: str) -> str:
-    """Sanitize task title for Mermaid gantt labels by stripping prohibited characters.
+_GANTT_LABEL_LIMIT = 80
+
+
+def _sanitize_label(text: str, *, context: str = "label") -> str:
+    """Sanitize task title for Mermaid gantt/flowchart labels by stripping prohibited characters.
 
     :param text: Raw task title string.
-    :return: Cleaned and truncated string safe for Mermaid gantt label rendering.
+    :param context: Human-readable description of the source (e.g. ``"Task 1.1 title"``), used
+        to make the length error actionable.
+    :return: Cleaned string safe for Mermaid gantt/flowchart label rendering.
+    :raises ValueError: If the cleaned text exceeds `_GANTT_LABEL_LIMIT` chars. Truncating
+        silently here previously produced mangled diagrams that only surfaced downstream at
+        render-validate time; failing loudly at generation time forces the source title to be
+        shortened instead.
     """
     clean = re.sub(r"[:#;\"'`\n]", " ", text)
     clean = re.sub(r"\s+", " ", clean).strip()
-    return clean[:40] if len(clean) > 40 else clean
+    if len(clean) > _GANTT_LABEL_LIMIT:
+        raise ValueError(
+            f"{context} {clean!r} is {len(clean)} chars; Mermaid gantt/flowchart labels are "
+            f"capped at {_GANTT_LABEL_LIMIT}. Shorten the source title by "
+            f"{len(clean) - _GANTT_LABEL_LIMIT} chars instead of letting it be truncated."
+        )
+    return clean
 
 
 def _sanitize_id(text: str) -> str:
@@ -95,11 +110,14 @@ def render_mermaid_gantt(
     normalized_sections = []
     for section in sections:
         normalized_sections.append({
-            "name": _sanitize_label(section.get("name", "Execution Wave")),
+            "name": _sanitize_label(section.get("name", "Execution Wave"), context="Gantt section name"),
             "bars": [{
                 **bar,
                 "id": _sanitize_id(str(bar.get("id", "task"))),
-                "label": _sanitize_label(str(bar.get("label", "Task"))),
+                "label": _sanitize_label(
+                    str(bar.get("label", "Task")),
+                    context=f"Gantt bar {bar.get('id', 'task')} label",
+                ),
             } for bar in section.get("bars", [])],
         })
     return render_mermaid_ir({
@@ -257,7 +275,7 @@ def build_flowchart_from_tasks_data(
         t_id = task["id"]
         nodes.append({
             "id": t_id,
-            "label": f"{t_id}: {_sanitize_label(task.get('title', 'Task'))}",
+            "label": f"{t_id}: {_sanitize_label(task.get('title', 'Task'), context=f'Task {t_id} title')}",
             "kind": "process",
             "group": f"stage-{int(task.get('stage') or 1)}",
             "status": statuses[t_id],
@@ -300,15 +318,28 @@ _STATUS_EMOJI: Dict[str, str] = {
 }
 
 
-def _sanitize_kanban_label(text: str) -> str:
+_KANBAN_LABEL_LIMIT = 60
+
+
+def _sanitize_kanban_label(text: str, *, context: str = "label") -> str:
     """Sanitize a task title for a Mermaid kanban card, stripping chars the `[...]`/`@{...}` syntax reserves.
 
     :param text: Raw task title string.
-    :return: Cleaned and truncated string safe for Mermaid kanban card labels.
+    :param context: Human-readable description of the source (e.g. ``"Task 1.1 title"``), used
+        to make the length error actionable.
+    :return: Cleaned string safe for Mermaid kanban card labels.
+    :raises ValueError: If the cleaned text exceeds `_KANBAN_LABEL_LIMIT` chars, for the same
+        reason `_sanitize_label` raises instead of truncating.
     """
     clean = re.sub(r"[\[\]{}@:#;\"'`\n]", " ", text)
     clean = re.sub(r"\s+", " ", clean).strip()
-    return clean[:60] if len(clean) > 60 else clean
+    if len(clean) > _KANBAN_LABEL_LIMIT:
+        raise ValueError(
+            f"{context} {clean!r} is {len(clean)} chars; Mermaid kanban card labels are capped "
+            f"at {_KANBAN_LABEL_LIMIT}. Shorten the source title by "
+            f"{len(clean) - _KANBAN_LABEL_LIMIT} chars instead of letting it be truncated."
+        )
+    return clean
 
 
 def build_kanban_board_from_tasks_data(
@@ -338,7 +369,10 @@ def build_kanban_board_from_tasks_data(
         t_id = task["id"]
         card_id = _sanitize_id(f"kanban_{t_id}")
         status = statuses[t_id]
-        label = f"{_STATUS_EMOJI[status]} {t_id}: {_sanitize_kanban_label(task.get('title', 'Task'))}"
+        label = (
+            f"{_STATUS_EMOJI[status]} {t_id}: "
+            f"{_sanitize_kanban_label(task.get('title', 'Task'), context=f'Task {t_id} title')}"
+        )
         cards_by_status[status].append(f"{card_id}[{label}]")
 
     lines = ["```mermaid", "kanban"]

@@ -47,6 +47,12 @@ All notable changes to the Spec-Driven Development Skills suite are documented i
 - **`spec-driven/scripts/spec-check.py`**: Enhanced with `sidecars/` subfolder lookup, SHA-256 freshness tracking across all 6 spec artifacts, and in-memory 3-way traceability validation.
 
 ### Fixed
+- **`spec-driven/scripts/render-gantt.py`**: Gantt/flowchart and kanban task labels no longer
+  silently truncate over-length titles into mangled diagram text. `_sanitize_label` and
+  `_sanitize_kanban_label` now raise a `ValueError` naming the offending task and its char count
+  instead, so an over-length title fails `--write` immediately rather than producing a diagram
+  that needs a manual post-hoc fix. Raised the flowchart/gantt label cap from 40 to 80 characters
+  to match realistic task title lengths. Documented the caps in `spec-tasks/SKILL.md`.
 - **Dependency security source compatibility**: Updated NVD CVE 2.0 lookups from the deprecated
   `cveId` parameter to `cveIds`. Hardened CycloneDX ingestion to require the standard
   `bomFormat`/`specVersion` identity, accept the specification's metadata-component graph root,
