@@ -21,6 +21,27 @@ routing, scheduling, rendering, execution bookkeeping, and checkpoint advancemen
 - Permit automatic external, irreversible, credentialed, or policy-changing actions.
 - Require a new third-party Python dependency for schema validation or scheduling.
 
+## Invocation Policy
+
+Invoke the full skill when the work benefits from explicit decisions, traceability, and controlled
+execution—not merely because it touches many lines. It is justified by any hard trigger, or by a
+planning score of three or more.
+
+Hard triggers are: an irreversible or external action; a security, privacy, data-migration, or
+production-risk change; a public API or persistent-data contract change; a request for multiple
+agents or concurrent execution; or an explicit request for a specification, design, or execution
+plan.
+
+The lightweight score adds one point each for: three or more dependent tasks; changes across
+multiple subsystems; a new or changed interface; unresolved technology/design alternatives;
+non-trivial verification or rollback requirements; and likely parallel work. A full run is used at
+three points. One or two points use a compact, single-artifact plan with the same deterministic
+checks that apply. Zero points proceeds as a direct, well-bounded edit with normal tests.
+
+At invocation, the agent records the selected mode and the matching triggers in a small decision
+record. This keeps qualification cheap, makes an unnecessary full workflow auditable, and prevents
+the skill from adding planning overhead to a one-file fix with an obvious verification command.
+
 ## Sources of Truth
 
 `04_tasks.json` is the stable plan source: task IDs, titles, stages, dependencies, ownership,
