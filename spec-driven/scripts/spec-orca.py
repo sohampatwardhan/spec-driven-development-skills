@@ -38,6 +38,19 @@ def load_agent_profiles() -> dict[str, Any]:
     return data
 
 
+def provider_compatibility_error(task: dict[str, Any], profile: dict[str, Any]) -> str | None:
+    """Return a non-retryable provider-policy reason, never a prompt-rewriting instruction."""
+    classification = str(task.get("safety_classification", "none"))
+    safety = profile.get("provider_safety", {})
+    allowed = safety.get("allowed_safety_classifications")
+    if isinstance(allowed, list) and classification not in allowed:
+        return f"provider policy blocks safety classification {classification!r}"
+    if safety.get("real_time_cyber_safeguards") and classification == "dual_use":
+        if not safety.get("defensive_use_verified"):
+            return "provider policy blocks dual_use work without verified defensive entitlement"
+    return None
+
+
 def find_tasks_sidecar(spec_dir: Path) -> Path:
     """Return the generated task sidecar, preferring the organized sidecars directory."""
     for candidate in (spec_dir / "sidecars" / "04_tasks.json", spec_dir / "04_tasks.json"):
@@ -359,6 +372,9 @@ def get_ready_dispatches(
         agent = agent_override or configured.get("agent") or _infer_agent(task_model, default_agent)
         if agent not in profiles:
             raise RuntimeError(f"unknown agent {agent!r}; expected one of {sorted(profiles)}")
+        provider_error = provider_compatibility_error(configured, profiles[agent])
+        if provider_error:
+            raise RuntimeError(f"task {task_id}: {provider_error}")
         model = model_override or (task_model if _model_matches_agent(task_model, agent) else None)
         effort = task.get("reasoning_level")
         worktree_mode = worktree_override or configured.get("worktree_mode") or "current"

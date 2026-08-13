@@ -17,6 +17,14 @@
           "unattended_flags": { "type": "array", "items": { "type": "string" } },
           "model_flag": { "type": "string" },
           "effort_flag": { "type": "string" },
+          "provider_safety": {
+            "type": "object",
+            "properties": {
+              "real_time_cyber_safeguards": { "type": "boolean" },
+              "defensive_use_verified": { "type": "boolean" },
+              "allowed_safety_classifications": { "type": "array", "items": { "type": "string" } }
+            }
+          },
           "role_overrides": {
             "type": "object",
             "properties": {

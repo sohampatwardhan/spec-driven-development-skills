@@ -7,6 +7,11 @@
       "model_flag": "--model",
       "effort_flag": "--effort",
       "effort_map": {"extra_high": "xhigh"},
+      "provider_safety": {
+        "real_time_cyber_safeguards": true,
+        "defensive_use_verified": false,
+        "allowed_safety_classifications": ["none", "defensive"]
+      },
       "role_overrides": {
         "implementer": {
           "unattended_flags": ["--permission-mode", "bypassPermissions"]

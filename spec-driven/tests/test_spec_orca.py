@@ -67,6 +67,12 @@ class SpecOrcaTests(unittest.TestCase):
         self.assertEqual(
             ["--dangerously-skip-permissions"], agents["agy"]["unattended_flags"]
         )
+        self.assertTrue(agents["claude"]["provider_safety"]["real_time_cyber_safeguards"])
+
+    def test_provider_constraint_blocks_unverified_dual_use_for_claude(self) -> None:
+        profile = spec_orca.load_agent_profiles()["agents"]["claude"]
+        self.assertIn("dual_use", spec_orca.provider_compatibility_error({"safety_classification": "dual_use"}, profile) or "")
+        self.assertIsNone(spec_orca.provider_compatibility_error({"safety_classification": "defensive"}, profile))
 
     def test_receipt_value_prefers_specific_nested_identifier_over_root_id(self) -> None:
         receipt = {"id": "local", "result": {"runId": "run_real"}}
