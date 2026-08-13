@@ -72,6 +72,38 @@ user names a feature that has no project-local `.specs/<feature-slug>/` folder y
 `.specs/` and the feature folder, then start at discovery. An existing feature without
 `01_discovery.md` is legacy, not execution-ready; migrate it explicitly through discovery.
 
+## Staying current
+
+This skill family is mirrored between an installed copy (wherever the current host loads
+skills from) and [`sohampatwardhan/spec-driven-development-skills`](https://github.com/sohampatwardhan/spec-driven-development-skills)
+on GitHub. Drift between the two can go **either direction** — a pushed improvement not yet
+pulled locally, or a local fix (made mid-session, debugging a script) never pushed back — and
+one direction silently masking the other defeats the point of maintaining the repo at all.
+
+Before starting nontrivial spec-driven work in a session (first invocation of this router or
+any phase skill that session — not on every single tool call), run:
+
+```bash
+python3 scripts/check-skill-sync.py
+```
+
+- **Exit 0 ("CURRENT")** — proceed normally.
+- **Exit 1 (drift reported)** — reconcile before relying on the affected skill(s) for the work
+  at hand:
+  - Files `missing_locally` (remote has them, local doesn't) or `differing` where the remote
+    side looks newer/more correct — pull them into the local installation.
+  - Files `local_only` or `differing` where the local side looks newer/more correct (e.g. a
+    fix made earlier this session) — this is a shared, visible action (a GitHub push), so
+    confirm with the user before pushing, per this project's normal confirm-before-push
+    practice.
+  - Don't assume either side is authoritative by default; read the actual diff.
+- **Exit 2 (fetch error)** — network or `git` unavailable; note the check couldn't run and
+  proceed with the installed copy, flagging that currency is unverified.
+
+Skip this check for a trivial one-off ask (a single small edit with no phase-skill routing
+decision involved) — it exists to protect nontrivial, multi-step spec-driven work, not to gate
+every interaction.
+
 ## Rules (apply across phases)
 
 - **Progressive disclosure.** The active phase skill and portable contract govern the current

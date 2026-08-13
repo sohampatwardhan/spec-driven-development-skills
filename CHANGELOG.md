@@ -39,6 +39,15 @@ All notable changes to the Spec-Driven Development Skills suite are documented i
   - Extended [`spec-driven/tests/test_sidecars.py`](spec-driven/tests/test_sidecars.py) for schema validation and `sidecars/` subfolder emission.
   - Full test suite passing at 133 passed, 3 skipped, 170 subtests passed.
 
+- **Bidirectional skill-sync check**: Added
+  [`spec-driven/scripts/check-skill-sync.py`](spec-driven/scripts/check-skill-sync.py), which
+  diffs the installed `spec-*`/`dependency-security-audit` skill directories against the latest
+  `main` of this repo and reports drift in either direction — files the local copy is missing
+  (a pushed improvement not yet pulled) as well as files only present locally (a fix made
+  mid-session and never pushed back), since one direction silently masking the other defeats
+  the point of maintaining this repo. Documented in a new "Staying current" section in
+  `spec-driven/SKILL.md`, run once per session before nontrivial spec-driven work.
+
 ### Changed
 - **`spec-execute/SKILL.md`**: Integrated Orca wave dispatching, child worktree placement, TUI idle synchronization, and supervised PTY event loops. Relaxed the prior blanket "do not add a new Kanban" rule into a named, execution-only exception for the Task Board that supplements (never replaces) the required flowchart.
 - **`spec-audit/SKILL.md`**: Integrated parallel reviewer dispatch and structured `audit_findings.json` emission.
@@ -47,6 +56,15 @@ All notable changes to the Spec-Driven Development Skills suite are documented i
 - **`spec-driven/scripts/spec-check.py`**: Enhanced with `sidecars/` subfolder lookup, SHA-256 freshness tracking across all 6 spec artifacts, and in-memory 3-way traceability validation.
 
 ### Fixed
+- **`spec-driven/scripts/render-gantt.py`**: The Stage-and-Dependency-Overview dedup regex now
+  tolerates the `%%{init: {'flowchart': {'defaultRenderer': 'elk'}}}%%` directive
+  `build_flowchart_from_tasks_data` inserts right after the ` ```mermaid ` fence — without this,
+  the pattern never matched an existing generated block, so every regeneration appended a
+  duplicate flowchart instead of replacing the one already there.
+- **`spec-driven/scripts/spec-orca.py`**: `receipt_value()` now searches `result.<resource>`
+  instead of the raw `orca ... --json` envelope, so the envelope's own per-request UUID `id`
+  no longer shadows the real nested resource id for any caller searching for a generic `"id"`
+  key.
 - **`spec-driven/scripts/render-gantt.py`**: Gantt/flowchart and kanban task labels no longer
   silently truncate over-length titles into mangled diagram text. `_sanitize_label` and
   `_sanitize_kanban_label` now raise a `ValueError` naming the offending task and its char count
