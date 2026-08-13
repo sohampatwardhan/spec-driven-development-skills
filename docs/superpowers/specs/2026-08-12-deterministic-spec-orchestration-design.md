@@ -67,6 +67,27 @@ worktree/sandbox/permission settings, owned-path leases, and an explanation of w
 Conflicting ownership, unresolved dependencies, or incompatible permissions block dispatch;
 the scheduler never silently chooses an unsafe fallback.
 
+## Provider Safety Constraints
+
+Agent profiles declare provider-specific execution constraints alongside model, permission, and
+sandbox settings. For cybersecurity-sensitive work, the profile records whether real-time cyber
+safeguards apply, whether the organization has a verified defensive-use entitlement, and how a
+provider block is reported. [Anthropic documents](https://support.claude.com/en/articles/14604842-real-time-cyber-safeguards-on-claude-opus-and-sonnet)
+that its real-time safeguards apply to Opus and Sonnet, block prohibited and high-risk dual-use
+cyber activity by default, and can still block approved users; its Cyber Verification Program is
+specific to eligible defensive use cases.
+
+The scheduler uses these constraints to avoid dispatching a task to a predictably unavailable
+agent. A provider-policy block is a non-retryable outcome for that agent: the controller preserves
+the evidence, does not rephrase the task to evade a safeguard, and does not silently substitute an
+agent merely to bypass a policy. It may select a different approved profile only when the task is
+authorized, the organization policy permits that provider, and the task remains within the same
+safety classification. Otherwise it opens an exception gate.
+
+This keeps the orchestration layer aware that providers differ—such as a Claude profile carrying
+real-time cyber constraints while a configured Codex profile may not—without treating a different
+provider as an override for prohibited work.
+
 ## Autonomous Execution and Checkpoints
 
 For each wave, Orca dispatches compatible tasks into isolated worktrees. Workers commit their
