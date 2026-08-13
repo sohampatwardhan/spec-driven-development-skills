@@ -248,8 +248,12 @@ def _default_services(
         transport, connect_timeout=connect_timeout, read_timeout=read_timeout,
         secrets=credentials,
     )
+    kev_http = RetryingHttpClient(
+        transport, connect_timeout=connect_timeout, read_timeout=read_timeout,
+        max_bytes=5_000_000, secrets=credentials,
+    )
     return AuditServices(
-        osv=OsvClient(http), kev=KevClient(http),
+        osv=OsvClient(http), kev=KevClient(kev_http),
         github=GithubClient(http), nvd=NvdClient(http),
         native_audits=lambda inventory: _run_native_audits(
             inventory, root, command_runner,

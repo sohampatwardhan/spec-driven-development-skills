@@ -99,6 +99,16 @@ class CliTests(unittest.TestCase):
             incomplete_reasons=[] if complete else ["fixture incomplete"],
         )
 
+    def test_default_services_use_a_source_specific_kev_response_bound(self):
+        services = cli._default_services(
+            (), "", "", 5.0, 15.0, self.root, command_runner=lambda *_args: None
+        )
+
+        self.assertEqual(services.osv.http.max_bytes, 1_000_000)
+        self.assertEqual(services.github.http.max_bytes, 1_000_000)
+        self.assertEqual(services.nvd.http.max_bytes, 1_000_000)
+        self.assertEqual(services.kev.http.max_bytes, 5_000_000)
+
     @staticmethod
     def native_inventory(source):
         ecosystem, name, version, purl = {

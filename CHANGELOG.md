@@ -12,6 +12,19 @@ bug fix with no behavior change for existing users. There is no single version n
 suite as a whole — a release below lists exactly the skills it changed and their old → new
 version, and skills it doesn't mention are unchanged at their last-listed version.
 
+## [1.1.1] - 2026-08-13
+
+Allow the release dependency audit to consume the complete current CISA Known Exploited
+Vulnerabilities catalog while retaining bounded response handling.
+
+**Versions:** `dependency-security-audit` 1.0.1 → 1.0.2
+
+### Fixed
+- **CISA KEV release audits:** Use a source-specific 5 MB response ceiling for the complete KEV
+  catalog in both release auditing and advisory search. OSV, GitHub, and NVD retain the general
+  1 MB ceiling, and KEV responses larger than 5 MB still fail closed.
+- Added regression coverage proving that only the KEV client receives the larger bound.
+
 ## [1.1.0] - 2026-08-12
 
 Orca multi-agent task orchestration, deterministic sidecar tooling, an execution status control

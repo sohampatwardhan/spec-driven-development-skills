@@ -106,11 +106,14 @@ class SearchServices:
 
 
 def default_services(*, credential_values: Iterable[str] = ()) -> SearchServices:
-    """Construct bounded production clients sharing one redacting HTTP transport policy."""
+    """Construct bounded production clients with source-specific response limits."""
 
-    http = RetryingHttpClient(secrets=tuple(item for item in credential_values if item))
+    secrets = tuple(item for item in credential_values if item)
+    http = RetryingHttpClient(secrets=secrets)
+    kev_http = RetryingHttpClient(max_bytes=5_000_000, secrets=secrets)
     return SearchServices(
-        osv=OsvClient(http), github=GithubClient(http), nvd=NvdClient(http), kev=KevClient(http),
+        osv=OsvClient(http), github=GithubClient(http), nvd=NvdClient(http),
+        kev=KevClient(kev_http),
     )
 
 

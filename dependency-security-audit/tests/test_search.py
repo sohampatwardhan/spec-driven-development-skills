@@ -24,6 +24,7 @@ from dependency_audit.models import (  # noqa: E402
 from dependency_audit.search import (  # noqa: E402
     INFORMATIONAL_NOTICE,
     SearchServices,
+    default_services,
     format_json,
     format_text,
     search_advisory,
@@ -31,6 +32,16 @@ from dependency_audit.search import (  # noqa: E402
     search_package,
 )
 from dependency_audit.sources import SourceResult  # noqa: E402
+
+
+class DefaultServicesTests(unittest.TestCase):
+    def test_kev_uses_larger_bounded_client_without_weakening_other_sources(self) -> None:
+        services = default_services(credential_values=("secret",))
+
+        self.assertEqual(services.osv.http.max_bytes, 1_000_000)
+        self.assertEqual(services.github.http.max_bytes, 1_000_000)
+        self.assertEqual(services.nvd.http.max_bytes, 1_000_000)
+        self.assertEqual(services.kev.http.max_bytes, 5_000_000)
 
 
 def source_result(source: str, value: object, state: SourceState = SourceState.OK,
