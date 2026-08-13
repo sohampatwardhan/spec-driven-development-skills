@@ -1,6 +1,7 @@
 ---
 name: spec-hooks
 description: Use when setting up agent hooks (event-triggered automations) for a spec-driven project — selecting safe hooks for supported agent hosts and validating their official configuration before wiring actions around file changes, task completion, or commits. Triggers on "agent hooks", "spec hooks", "run X automatically when Y", or wiring automation into a .specs workflow.
+version: 1.0.0
 ---
 
 # Spec Hooks

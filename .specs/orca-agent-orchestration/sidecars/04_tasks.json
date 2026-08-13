@@ -1,10 +1,18 @@
 {
-  "schema_version": 1,
+  "concurrency": {
+    "active_stage": null,
+    "blocked": {},
+    "parallel_candidates": [],
+    "ready": [],
+    "serial_candidates": [],
+    "waves": []
+  },
   "generated_from": {
     "file": "04_tasks.md",
-    "sha256": "ae85e6afb35b5303ffb197f58e4131bd1f5c51cc309fd312cbeed4feba2e3f27"
+    "sha256": "d042777000b71bb2f9e327c987120200a8d2a804daf03667fbbcd3a44cde3fa1"
   },
   "requirement_count": 39,
+  "schema_version": 1,
   "stages": {
     "1": [
       "1.1",
@@ -30,21 +38,19 @@
   },
   "tasks": [
     {
-      "id": "1.1",
-      "title": "Update spec-family contract with Orca runtime adapter and agent profiles schema",
+      "capability_tier": "balanced",
       "checked": true,
-      "optional": false,
-      "stage": 1,
+      "delegation": "sequential subagent",
+      "dependency_delivery": "none",
+      "dependency_resolution": "none",
       "depends_on": [],
       "files": [
         "spec-driven/contracts/spec-family.yaml"
       ],
-      "delegation": "sequential subagent",
-      "dependency_resolution": "none",
-      "dependency_delivery": "none",
-      "interfaces": "Consumes: 03_design.md; Produces: spec-family.yaml runtime_adapters.orca schema and agent profile definitions",
-      "verification": "pytest spec-driven/tests/test_model_routing.py",
-      "risk": "low; backward-compatible yaml schema additions",
+      "id": "1.1",
+      "interfaces": "Consumes: [`03_design.md`](03_design.md); Produces: runtime adapter schema and agent profile definitions in [`spec-driven/contracts/spec-family.yaml`](../../spec-driven/contracts/spec-family.yaml)",
+      "optional": false,
+      "reasoning_level": "medium",
       "requirements": [
         "1.1",
         "1.2",
@@ -54,24 +60,19 @@
         "10.1",
         "10.2"
       ],
-      "task_category": "architecture_design",
-      "capability_tier": "complex_reasoning",
-      "resolved_model": "gemini-2.5-pro",
-      "reasoning_level": "medium",
-      "orca_dispatch": {
-        "worktree_mode": "current",
-        "agent": "claude",
-        "unattended_flags": [
-          "--dangerously-skip-permissions"
-        ]
-      }
+      "resolved_model": "claude-sonnet-5",
+      "risk": "low; backward-compatible yaml schema additions",
+      "stage": 1,
+      "task_category": "code_analysis",
+      "title": "Update spec-family contract with Orca runtime adapter and agent profiles schema",
+      "verification": "pytest spec-driven/tests/test_model_routing.py"
     },
     {
-      "id": "1.2",
-      "title": "Register formal JSON Schemas in contracts/schemas/ and create canonical agent_profiles.json",
+      "capability_tier": "balanced",
       "checked": true,
-      "optional": false,
-      "stage": 1,
+      "delegation": "parallel-safe",
+      "dependency_delivery": "none",
+      "dependency_resolution": "none",
       "depends_on": [],
       "files": [
         "spec-driven/contracts/schemas/00_state.schema.json",
@@ -85,12 +86,10 @@
         "spec-driven/contracts/schemas/orca_run.schema.json",
         "spec-driven/contracts/agent_profiles.json"
       ],
-      "delegation": "parallel-safe",
-      "dependency_resolution": "none",
-      "dependency_delivery": "none",
-      "interfaces": "Consumes: 03_design.md data models; Produces: 9 JSON schemas and canonical agent CLI flag matrix",
-      "verification": "python3 -c 'import json, glob; [json.load(open(f)) for f in glob.glob(\"spec-driven/contracts/schemas/*.json\")]'",
-      "risk": "low; valid JSON Schema Draft 2020-12 specifications",
+      "id": "1.2",
+      "interfaces": "Consumes: [`03_design.md`](03_design.md) data models; Produces: 9 JSON schemas and canonical agent CLI flag matrix in [`spec-driven/contracts/agent_profiles.json`](../../spec-driven/contracts/agent_profiles.json)",
+      "optional": false,
+      "reasoning_level": "medium",
       "requirements": [
         "7.1",
         "7.2",
@@ -98,35 +97,28 @@
         "8.1",
         "8.2"
       ],
+      "resolved_model": "claude-sonnet-5",
+      "risk": "low; valid JSON Schema specifications",
+      "stage": 1,
       "task_category": "code_analysis",
-      "capability_tier": "complex_reasoning",
-      "resolved_model": "gemini-2.5-pro",
-      "reasoning_level": "low",
-      "orca_dispatch": {
-        "worktree_mode": "new-child",
-        "agent": "claude",
-        "unattended_flags": [
-          "--dangerously-skip-permissions"
-        ]
-      }
+      "title": "Register formal JSON Schemas in contracts/schemas/ and create canonical agent_profiles.json",
+      "verification": "python3 -c 'import json, glob; [json.load(open(f)) for f in glob.glob(\"spec-driven/contracts/schemas/*.json\")]'"
     },
     {
-      "id": "1.3",
-      "title": "Author reference documentation for agent CLI flags and Orca orchestration",
+      "capability_tier": "balanced",
       "checked": true,
-      "optional": false,
-      "stage": 1,
+      "delegation": "parallel-safe",
+      "dependency_delivery": "none",
+      "dependency_resolution": "none",
       "depends_on": [],
       "files": [
         "spec-driven/references/agent-cli-flags.md",
         "spec-driven/references/orca-orchestration.md"
       ],
-      "delegation": "parallel-safe",
-      "dependency_resolution": "none",
-      "dependency_delivery": "none",
-      "interfaces": "Consumes: Context7 research and Orca CLI surface; Produces: markdown reference guides",
-      "verification": "test -f spec-driven/references/agent-cli-flags.md && test -f spec-driven/references/orca-orchestration.md",
-      "risk": "low; documentation only",
+      "id": "1.3",
+      "interfaces": "Consumes: Context7 research and Orca CLI surface; Produces: markdown reference guides in [`spec-driven/references/`](../../spec-driven/references)",
+      "optional": false,
+      "reasoning_level": "medium",
       "requirements": [
         "1.1",
         "1.2",
@@ -135,24 +127,19 @@
         "1.5",
         "2.1"
       ],
+      "resolved_model": "claude-sonnet-5",
+      "risk": "low; documentation only",
+      "stage": 1,
       "task_category": "code_analysis",
-      "capability_tier": "quick_response",
-      "resolved_model": "gemini-2.5-flash",
-      "reasoning_level": "low",
-      "orca_dispatch": {
-        "worktree_mode": "new-child",
-        "agent": "claude",
-        "unattended_flags": [
-          "--dangerously-skip-permissions"
-        ]
-      }
+      "title": "Author reference documentation for agent CLI flags and Orca orchestration",
+      "verification": "test -f spec-driven/references/agent-cli-flags.md && test -f spec-driven/references/orca-orchestration.md"
     },
     {
-      "id": "2.1",
-      "title": "Implement spec-orca.py bridge utility for Run, DAG, and Decision Gate synchronization",
+      "capability_tier": "frontier",
       "checked": true,
-      "optional": false,
-      "stage": 2,
+      "delegation": "parallel-safe",
+      "dependency_delivery": "none",
+      "dependency_resolution": "none",
       "depends_on": [
         "1.1",
         "1.2"
@@ -160,12 +147,10 @@
       "files": [
         "spec-driven/scripts/spec-orca.py"
       ],
-      "delegation": "parallel-safe",
-      "dependency_resolution": "none",
-      "dependency_delivery": "none",
-      "interfaces": "Consumes: 04_tasks.json and contracts/agent_profiles.json; Produces: CLI script with sync, status, dispatch-ready, reconcile subcommands",
-      "verification": "python3 spec-driven/scripts/spec-orca.py --help",
-      "risk": "medium; CLI subprocess interaction with orca binary",
+      "id": "2.1",
+      "interfaces": "Consumes: [`sidecars/04_tasks.json`](sidecars/04_tasks.json) and [`spec-driven/contracts/agent_profiles.json`](../../spec-driven/contracts/agent_profiles.json); Produces: CLI script with sync, status, dispatch-ready, reconcile subcommands",
+      "optional": false,
+      "reasoning_level": "extra_high",
       "requirements": [
         "2.1",
         "2.2",
@@ -178,60 +163,48 @@
         "10.2",
         "10.3"
       ],
-      "task_category": "core_logic",
-      "capability_tier": "complex_reasoning",
-      "resolved_model": "gemini-2.5-pro",
-      "reasoning_level": "high",
-      "orca_dispatch": {
-        "worktree_mode": "new-child",
-        "agent": "claude",
-        "unattended_flags": [
-          "--dangerously-skip-permissions"
-        ]
-      }
+      "resolved_model": "claude-opus-5",
+      "risk": "medium; CLI subprocess interaction with orca binary",
+      "stage": 2,
+      "task_category": "heavy_reasoning",
+      "title": "Implement spec-orca.py bridge utility for Run, DAG, and Decision Gate synchronization",
+      "verification": "python3 spec-driven/scripts/spec-orca.py --help"
     },
     {
-      "id": "2.2",
-      "title": "Implement render-gantt.py deterministic Mermaid Gantt chart generator",
+      "capability_tier": "balanced",
       "checked": true,
-      "optional": false,
-      "stage": 2,
+      "delegation": "parallel-safe",
+      "dependency_delivery": "none",
+      "dependency_resolution": "none",
       "depends_on": [
         "1.2"
       ],
       "files": [
         "spec-driven/scripts/render-gantt.py"
       ],
-      "delegation": "parallel-safe",
-      "dependency_resolution": "none",
-      "dependency_delivery": "none",
-      "interfaces": "Consumes: 05_execution.json timing rows; Produces: validated Mermaid gantt block injected into 05_execution.md",
-      "verification": "python3 spec-driven/scripts/render-gantt.py --help",
-      "risk": "low; deterministic text transformation and Mermaid formatting",
+      "id": "2.2",
+      "interfaces": "Consumes: [`sidecars/05_execution.json`](sidecars/05_execution.json) timing rows; Produces: validated Mermaid gantt block injected into [05_execution.md](05_execution.md)",
+      "optional": false,
+      "reasoning_level": "medium",
       "requirements": [
         "6.1",
         "9.1",
         "9.2",
         "9.3"
       ],
-      "task_category": "core_logic",
-      "capability_tier": "complex_reasoning",
-      "resolved_model": "gemini-2.5-pro",
-      "reasoning_level": "medium",
-      "orca_dispatch": {
-        "worktree_mode": "new-child",
-        "agent": "claude",
-        "unattended_flags": [
-          "--dangerously-skip-permissions"
-        ]
-      }
+      "resolved_model": "claude-sonnet-5",
+      "risk": "low; deterministic text transformation and Mermaid formatting",
+      "stage": 2,
+      "task_category": "code_analysis",
+      "title": "Implement render-gantt.py deterministic Mermaid Gantt chart generator",
+      "verification": "python3 spec-driven/scripts/render-gantt.py --help"
     },
     {
-      "id": "2.3",
-      "title": "Enhance spec-check.py with sidecars folder support, schema validation, and 3-way traceability",
+      "capability_tier": "frontier",
       "checked": true,
-      "optional": false,
-      "stage": 2,
+      "delegation": "sequential subagent",
+      "dependency_delivery": "none",
+      "dependency_resolution": "none",
       "depends_on": [
         "1.1",
         "1.2"
@@ -239,12 +212,10 @@
       "files": [
         "spec-driven/scripts/spec-check.py"
       ],
-      "delegation": "sequential subagent",
-      "dependency_resolution": "none",
-      "dependency_delivery": "none",
-      "interfaces": "Consumes: contracts/schemas; Produces: extended validator supporting sidecars/ subfolder, JSON schema validation, and 3-way in-memory traceability",
-      "verification": "pytest spec-driven/tests/test_spec_check.py spec-driven/tests/test_sidecars.py",
-      "risk": "medium; core validation script modifications",
+      "id": "2.3",
+      "interfaces": "Consumes: [`spec-driven/contracts/schemas/`](../../spec-driven/contracts/schemas); Produces: extended validator supporting [`sidecars/`](sidecars) subfolder, JSON schema validation, and 3-way in-memory traceability",
+      "optional": false,
+      "reasoning_level": "extra_high",
       "requirements": [
         "7.1",
         "7.2",
@@ -253,24 +224,19 @@
         "8.2",
         "8.3"
       ],
-      "task_category": "core_logic",
-      "capability_tier": "complex_reasoning",
-      "resolved_model": "gemini-2.5-pro",
-      "reasoning_level": "high",
-      "orca_dispatch": {
-        "worktree_mode": "current",
-        "agent": "claude",
-        "unattended_flags": [
-          "--dangerously-skip-permissions"
-        ]
-      }
+      "resolved_model": "claude-opus-5",
+      "risk": "medium; core validation script modifications",
+      "stage": 2,
+      "task_category": "heavy_reasoning",
+      "title": "Enhance spec-check.py with sidecars folder support, schema validation, and 3-way traceability",
+      "verification": "pytest spec-driven/tests/test_spec_check.py spec-driven/tests/test_sidecars.py"
     },
     {
-      "id": "3.1",
-      "title": "Update spec-execute skill with Orca wave dispatch, worktree placement, and PTY supervision",
+      "capability_tier": "balanced",
       "checked": true,
-      "optional": false,
-      "stage": 3,
+      "delegation": "parallel-safe",
+      "dependency_delivery": "none",
+      "dependency_resolution": "none",
       "depends_on": [
         "2.1",
         "2.2",
@@ -279,12 +245,10 @@
       "files": [
         "spec-execute/SKILL.md"
       ],
-      "delegation": "parallel-safe",
-      "dependency_resolution": "none",
-      "dependency_delivery": "none",
-      "interfaces": "Consumes: scripts/spec-orca.py and agent profiles; Produces: updated phase 5 execution protocol",
-      "verification": "grep -q 'orca orchestration' spec-execute/SKILL.md",
-      "risk": "low; skill documentation and prompt workflow",
+      "id": "3.1",
+      "interfaces": "Consumes: [`spec-driven/scripts/spec-orca.py`](../../spec-driven/scripts/spec-orca.py) and agent profiles; Produces: updated phase 5 execution protocol in [`spec-execute/SKILL.md`](../../spec-execute/SKILL.md)",
+      "optional": false,
+      "reasoning_level": "medium",
       "requirements": [
         "3.1",
         "3.2",
@@ -299,24 +263,19 @@
         "6.2",
         "6.3"
       ],
+      "resolved_model": "claude-sonnet-5",
+      "risk": "low; skill documentation and prompt workflow",
+      "stage": 3,
       "task_category": "code_analysis",
-      "capability_tier": "complex_reasoning",
-      "resolved_model": "gemini-2.5-pro",
-      "reasoning_level": "medium",
-      "orca_dispatch": {
-        "worktree_mode": "new-child",
-        "agent": "claude",
-        "unattended_flags": [
-          "--dangerously-skip-permissions"
-        ]
-      }
+      "title": "Update spec-execute skill with Orca wave dispatch, worktree placement, and PTY supervision",
+      "verification": "grep -q 'orca orchestration' spec-execute/SKILL.md"
     },
     {
-      "id": "3.2",
-      "title": "Update spec-audit skill with parallel reviewer dispatch and audit_findings.json emission",
+      "capability_tier": "balanced",
       "checked": true,
-      "optional": false,
-      "stage": 3,
+      "delegation": "parallel-safe",
+      "dependency_delivery": "none",
+      "dependency_resolution": "none",
       "depends_on": [
         "2.1",
         "2.3"
@@ -324,36 +283,29 @@
       "files": [
         "spec-audit/SKILL.md"
       ],
-      "delegation": "parallel-safe",
-      "dependency_resolution": "none",
-      "dependency_delivery": "none",
-      "interfaces": "Consumes: fanout.py and agent profiles; Produces: updated phase 4.5 audit protocol emitting structured audit_findings.json",
-      "verification": "grep -q 'audit_findings.json' spec-audit/SKILL.md",
-      "risk": "low; skill documentation update",
+      "id": "3.2",
+      "interfaces": "Consumes: [`spec-driven/scripts/fanout.py`](../../spec-driven/scripts/fanout.py) and agent profiles; Produces: updated phase 4.5 audit protocol emitting structured `audit_findings.json` in [`spec-audit/SKILL.md`](../../spec-audit/SKILL.md)",
+      "optional": false,
+      "reasoning_level": "medium",
       "requirements": [
         "5.1",
         "5.2",
         "5.3",
         "7.4"
       ],
+      "resolved_model": "claude-sonnet-5",
+      "risk": "low; skill documentation update",
+      "stage": 3,
       "task_category": "code_analysis",
-      "capability_tier": "complex_reasoning",
-      "resolved_model": "gemini-2.5-pro",
-      "reasoning_level": "medium",
-      "orca_dispatch": {
-        "worktree_mode": "new-child",
-        "agent": "claude",
-        "unattended_flags": [
-          "--dangerously-skip-permissions"
-        ]
-      }
+      "title": "Update spec-audit skill with parallel reviewer dispatch and audit_findings.json emission",
+      "verification": "grep -q 'audit_findings.json' spec-audit/SKILL.md"
     },
     {
-      "id": "3.3",
-      "title": "Update spec-tasks, spec-finish, and spec-driven workflow skills with sidecar directory layouts",
+      "capability_tier": "balanced",
       "checked": true,
-      "optional": false,
-      "stage": 3,
+      "delegation": "parallel-safe",
+      "dependency_delivery": "none",
+      "dependency_resolution": "none",
       "depends_on": [
         "2.3"
       ],
@@ -362,46 +314,37 @@
         "spec-finish/SKILL.md",
         "spec-driven/SKILL.md"
       ],
-      "delegation": "parallel-safe",
-      "dependency_resolution": "none",
-      "dependency_delivery": "none",
+      "id": "3.3",
       "interfaces": "Consumes: sidecar directory specification; Produces: synchronized skill documentation across the spec family",
-      "verification": "grep -q 'sidecars/' spec-tasks/SKILL.md",
-      "risk": "low; skill documentation update",
+      "optional": false,
+      "reasoning_level": "medium",
       "requirements": [
         "7.1",
         "8.2"
       ],
+      "resolved_model": "claude-sonnet-5",
+      "risk": "low; skill documentation update",
+      "stage": 3,
       "task_category": "code_analysis",
-      "capability_tier": "quick_response",
-      "resolved_model": "gemini-2.5-flash",
-      "reasoning_level": "low",
-      "orca_dispatch": {
-        "worktree_mode": "new-child",
-        "agent": "claude",
-        "unattended_flags": [
-          "--dangerously-skip-permissions"
-        ]
-      }
+      "title": "Update spec-tasks, spec-finish, and spec-driven workflow skills with sidecar directory layouts",
+      "verification": "grep -q 'sidecars/' spec-tasks/SKILL.md"
     },
     {
-      "id": "4.1",
-      "title": "Extend test_sidecars.py test suite for all 9 schemas and sidecars/ subfolder validation",
+      "capability_tier": "balanced",
       "checked": true,
-      "optional": false,
-      "stage": 4,
+      "delegation": "parallel-safe",
+      "dependency_delivery": "none",
+      "dependency_resolution": "none",
       "depends_on": [
         "3.3"
       ],
       "files": [
         "spec-driven/tests/test_sidecars.py"
       ],
-      "delegation": "parallel-safe",
-      "dependency_resolution": "none",
-      "dependency_delivery": "none",
-      "interfaces": "Consumes: contracts/schemas; Produces: unit tests for all sidecar schema validations",
-      "verification": "pytest spec-driven/tests/test_sidecars.py",
-      "risk": "low; test suite expansion",
+      "id": "4.1",
+      "interfaces": "Consumes: [`spec-driven/contracts/schemas/`](../../spec-driven/contracts/schemas); Produces: unit tests for all sidecar schema validations in [`spec-driven/tests/test_sidecars.py`](../../spec-driven/tests/test_sidecars.py)",
+      "optional": false,
+      "reasoning_level": "medium",
       "requirements": [
         "7.1",
         "7.2",
@@ -411,36 +354,29 @@
         "8.2",
         "8.3"
       ],
-      "task_category": "unit_test",
-      "capability_tier": "complex_reasoning",
-      "resolved_model": "gemini-2.5-pro",
-      "reasoning_level": "medium",
-      "orca_dispatch": {
-        "worktree_mode": "new-child",
-        "agent": "claude",
-        "unattended_flags": [
-          "--dangerously-skip-permissions"
-        ]
-      }
+      "resolved_model": "claude-sonnet-5",
+      "risk": "low; test suite expansion",
+      "stage": 4,
+      "task_category": "review",
+      "title": "Extend test_sidecars.py test suite for all 9 schemas and sidecars/ subfolder validation",
+      "verification": "pytest spec-driven/tests/test_sidecars.py"
     },
     {
-      "id": "4.2",
-      "title": "Implement test_spec_orca.py test suite for DAG mapping, dependency blocking, and gates",
+      "capability_tier": "balanced",
       "checked": true,
-      "optional": false,
-      "stage": 4,
+      "delegation": "parallel-safe",
+      "dependency_delivery": "none",
+      "dependency_resolution": "none",
       "depends_on": [
         "3.1"
       ],
       "files": [
         "spec-driven/tests/test_spec_orca.py"
       ],
-      "delegation": "parallel-safe",
-      "dependency_resolution": "none",
-      "dependency_delivery": "none",
-      "interfaces": "Consumes: scripts/spec-orca.py; Produces: unit tests for task graph to Orca run/task/gate translation",
-      "verification": "pytest spec-driven/tests/test_spec_orca.py",
-      "risk": "low; new test suite",
+      "id": "4.2",
+      "interfaces": "Consumes: [`spec-driven/scripts/spec-orca.py`](../../spec-driven/scripts/spec-orca.py); Produces: unit tests for task graph to Orca run/task/gate translation",
+      "optional": false,
+      "reasoning_level": "medium",
       "requirements": [
         "2.1",
         "2.2",
@@ -453,163 +389,82 @@
         "10.2",
         "10.3"
       ],
-      "task_category": "unit_test",
-      "capability_tier": "complex_reasoning",
-      "resolved_model": "gemini-2.5-pro",
-      "reasoning_level": "medium",
-      "orca_dispatch": {
-        "worktree_mode": "new-child",
-        "agent": "claude",
-        "unattended_flags": [
-          "--dangerously-skip-permissions"
-        ]
-      }
+      "resolved_model": "claude-sonnet-5",
+      "risk": "low; new test suite",
+      "stage": 4,
+      "task_category": "review",
+      "title": "Implement test_spec_orca.py test suite for DAG mapping, dependency blocking, and gates",
+      "verification": "pytest spec-driven/tests/test_spec_orca.py"
     },
     {
-      "id": "4.3",
-      "title": "Implement test_render_gantt.py test suite for deterministic Mermaid Gantt generation",
+      "capability_tier": "balanced",
       "checked": true,
-      "optional": false,
-      "stage": 4,
+      "delegation": "parallel-safe",
+      "dependency_delivery": "none",
+      "dependency_resolution": "none",
       "depends_on": [
         "3.1"
       ],
       "files": [
         "spec-driven/tests/test_render_gantt.py"
       ],
-      "delegation": "parallel-safe",
-      "dependency_resolution": "none",
-      "dependency_delivery": "none",
-      "interfaces": "Consumes: scripts/render-gantt.py; Produces: unit tests for Mermaid Gantt syntax and timing derivation",
-      "verification": "pytest spec-driven/tests/test_render_gantt.py",
-      "risk": "low; new test suite",
+      "id": "4.3",
+      "interfaces": "Consumes: [`spec-driven/scripts/render-gantt.py`](../../spec-driven/scripts/render-gantt.py); Produces: unit tests for Mermaid Gantt syntax and timing derivation",
+      "optional": false,
+      "reasoning_level": "medium",
       "requirements": [
         "9.1",
         "9.2",
         "9.3"
       ],
-      "task_category": "unit_test",
-      "capability_tier": "complex_reasoning",
-      "resolved_model": "gemini-2.5-pro",
-      "reasoning_level": "medium",
-      "orca_dispatch": {
-        "worktree_mode": "new-child",
-        "agent": "claude",
-        "unattended_flags": [
-          "--dangerously-skip-permissions"
-        ]
-      }
+      "resolved_model": "claude-sonnet-5",
+      "risk": "low; new test suite",
+      "stage": 4,
+      "task_category": "review",
+      "title": "Implement test_render_gantt.py test suite for deterministic Mermaid Gantt generation",
+      "verification": "pytest spec-driven/tests/test_render_gantt.py"
     },
     {
-      "id": "4.4",
-      "title": "Run full test verification, execute spec-check.py, and update spec state to complete",
+      "capability_tier": "balanced",
       "checked": true,
-      "optional": false,
-      "stage": 4,
+      "delegation": "sequential subagent",
+      "dependency_delivery": "none",
+      "dependency_resolution": "none",
       "depends_on": [
         "3.1",
         "3.2",
         "3.3"
       ],
       "files": [
-        ".specs/orca-agent-orchestration/00_state.md",
-        ".specs/orca-agent-orchestration/sidecars/00_state.json"
+        "05_execution.md",
+        "sidecars/05_execution.json",
+        "00_state.md",
+        "sidecars/00_state.json"
       ],
-      "delegation": "sequential subagent",
-      "dependency_resolution": "none",
-      "dependency_delivery": "none",
-      "interfaces": "Consumes: test suite execution results; Produces: verified spec state and clean execution evidence",
-      "verification": "pytest spec-driven/tests && python3 spec-driven/scripts/spec-check.py .specs/orca-agent-orchestration --emit-json",
-      "risk": "low; state finalization",
+      "id": "4.4",
+      "interfaces": "Consumes: all test results and execution ledger; Produces: complete passing spec check and verified state",
+      "optional": false,
+      "reasoning_level": "medium",
       "requirements": [
+        "6.1",
+        "6.2",
+        "6.3",
         "7.1",
-        "7.5",
+        "7.2",
+        "7.3",
+        "8.1",
+        "8.2",
+        "9.1",
+        "9.2",
+        "9.3",
         "8.3"
       ],
-      "task_category": "code_analysis",
-      "capability_tier": "complex_reasoning",
-      "resolved_model": "gemini-2.5-pro",
-      "reasoning_level": "low",
-      "orca_dispatch": {
-        "worktree_mode": "current",
-        "agent": "claude",
-        "unattended_flags": [
-          "--dangerously-skip-permissions"
-        ]
-      }
+      "resolved_model": "claude-sonnet-5",
+      "risk": "low; final validation pass",
+      "stage": 4,
+      "task_category": "review",
+      "title": "Execute full spec-check validation, emit final JSON sidecars, and record execution evidence",
+      "verification": "python3 spec-driven/scripts/spec-check.py .specs/orca-agent-orchestration"
     }
-  ],
-  "concurrency": {
-    "active_stage": 4,
-    "ready": [
-      "4.1",
-      "4.2",
-      "4.3",
-      "4.4"
-    ],
-    "parallel_candidates": [
-      "4.1",
-      "4.2",
-      "4.3"
-    ],
-    "serial_candidates": [
-      "4.4"
-    ],
-    "blocked": {
-      "2.1": [
-        "1.1",
-        "1.2"
-      ],
-      "2.2": [
-        "1.2"
-      ],
-      "2.3": [
-        "1.1",
-        "1.2"
-      ],
-      "3.1": [
-        "2.1",
-        "2.2",
-        "2.3"
-      ],
-      "3.2": [
-        "2.1",
-        "2.3"
-      ],
-      "3.3": [
-        "2.3"
-      ],
-      "4.1": [
-        "3.3"
-      ],
-      "4.2": [
-        "3.1"
-      ],
-      "4.3": [
-        "3.1"
-      ],
-      "4.4": [
-        "3.1",
-        "3.2",
-        "3.3"
-      ]
-    },
-    "waves": [
-      {
-        "wave": 1,
-        "mode": "serial",
-        "tasks": [
-          "1.1"
-        ]
-      },
-      {
-        "wave": 2,
-        "mode": "parallel",
-        "tasks": [
-          "1.2",
-          "1.3"
-        ]
-      }
-    ]
-  }
+  ]
 }

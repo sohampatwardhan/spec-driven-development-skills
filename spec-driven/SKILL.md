@@ -1,6 +1,7 @@
 ---
 name: spec-driven
 description: Use when building a feature or project with a spec-driven / Kiro-style workflow — turning an idea into discovery, requirements, design, and tasks before coding — or when the user mentions specs, EARS, steering, 01_discovery.md/02_requirements.md/03_design.md/04_tasks.md, ".specs", or asks to "build X properly with a spec". Routes to the phase skills.
+version: 1.1.0
 ---
 
 # Spec-Driven Development

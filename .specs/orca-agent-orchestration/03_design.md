@@ -81,7 +81,7 @@ flowchart TD
 
 7. **Budget & Quota Inspector ([`spec-driven/scripts/model-router.py`](../../spec-driven/scripts/model-router.py) & `scripts/spec-orca.py`)**:
    - Inspects available token/credit quotas, provider usage limits, or rate limit tiers before resolving agent models.
-   - Dynamically down-tiers non-critical tasks (`code_analysis`, `quick_response`, `documentation`, `unit_test`) to budget-efficient models when quotas are constrained.
+   - Dynamically down-tiers non-critical tasks (`code_analysis`, `quick_lookup`, `review`) to budget-efficient models when quotas are constrained.
    - Deferentially schedules tasks and enters a sleep/wait state when credits are exhausted or cooldowns are active.
 
 ---

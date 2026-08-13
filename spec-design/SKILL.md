@@ -1,6 +1,7 @@
 ---
 name: spec-design
 description: Use when writing the technical design for an approved requirements spec in spec-driven development — architecture, components, data models, mermaid diagrams, and correctness properties traced to requirements, in 03_design.md (phase 3). Triggers on "write the design", "03_design.md", or after requirements are approved.
+version: 1.0.0
 ---
 
 # Spec Design (Phase 3)

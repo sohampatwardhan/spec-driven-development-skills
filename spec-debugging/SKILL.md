@@ -1,6 +1,7 @@
 ---
 name: spec-debugging
 description: Use when a spec-execute task, verification command, build, test, integration, or runtime behavior fails unexpectedly before proposing or applying a fix.
+version: 1.0.0
 ---
 
 # Spec Debugging

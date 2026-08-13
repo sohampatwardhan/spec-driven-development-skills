@@ -34,25 +34,25 @@ kanban
 
 | Run ID | Started UTC | Stopped UTC | Elapsed Seconds | Outcome |
 |---|---|---|---|---|
-| run-orca-1 | 2026-08-10T19:40:00Z | 2026-08-10T19:50:00Z | 600 | complete |
+| run-20260810T194000Z | 2026-08-10T19:40:00Z | 2026-08-10T19:50:00Z | 600 | complete |
 
 ### Task Attempt Intervals
 
 | Run ID | Stage/Wave | Task | Attempt | Started UTC | Stopped UTC | Elapsed Seconds | Outcome |
 |---|---|---|---|---|---|---|---|
-| run-orca-1 | Stage 1 | 1.1 | 1 | 2026-08-10T19:40:00Z | 2026-08-10T19:42:00Z | 120 | verified |
-| run-orca-1 | Stage 1 | 1.2 | 1 | 2026-08-10T19:42:00Z | 2026-08-10T19:44:00Z | 120 | verified |
-| run-orca-1 | Stage 1 | 1.3 | 1 | 2026-08-10T19:44:00Z | 2026-08-10T19:45:00Z | 60 | verified |
-| run-orca-1 | Stage 2 | 2.1 | 1 | 2026-08-10T19:45:00Z | 2026-08-10T19:46:00Z | 60 | verified |
-| run-orca-1 | Stage 2 | 2.2 | 1 | 2026-08-10T19:46:00Z | 2026-08-10T19:47:00Z | 60 | verified |
-| run-orca-1 | Stage 2 | 2.3 | 1 | 2026-08-10T19:47:00Z | 2026-08-10T19:48:00Z | 60 | verified |
-| run-orca-1 | Stage 3 | 3.1 | 1 | 2026-08-10T19:48:00Z | 2026-08-10T19:48:30Z | 30 | verified |
-| run-orca-1 | Stage 3 | 3.2 | 1 | 2026-08-10T19:48:30Z | 2026-08-10T19:49:00Z | 30 | verified |
-| run-orca-1 | Stage 3 | 3.3 | 1 | 2026-08-10T19:49:00Z | 2026-08-10T19:49:30Z | 30 | verified |
-| run-orca-1 | Stage 4 | 4.1 | 1 | 2026-08-10T19:49:30Z | 2026-08-10T19:49:45Z | 15 | verified |
-| run-orca-1 | Stage 4 | 4.2 | 1 | 2026-08-10T19:49:45Z | 2026-08-10T19:49:55Z | 10 | verified |
-| run-orca-1 | Stage 4 | 4.3 | 1 | 2026-08-10T19:49:55Z | 2026-08-10T19:50:00Z | 5 | verified |
-| run-orca-1 | Stage 4 | 4.4 | 1 | 2026-08-10T19:50:00Z | 2026-08-10T19:50:10Z | 10 | verified |
+| run-20260810T194000Z | Stage 1 | 1.1 | 1 | 2026-08-10T19:40:00Z | 2026-08-10T19:42:00Z | 120 | verified |
+| run-20260810T194000Z | Stage 1 | 1.2 | 1 | 2026-08-10T19:42:00Z | 2026-08-10T19:44:00Z | 120 | verified |
+| run-20260810T194000Z | Stage 1 | 1.3 | 1 | 2026-08-10T19:44:00Z | 2026-08-10T19:45:00Z | 60 | verified |
+| run-20260810T194000Z | Stage 2 | 2.1 | 1 | 2026-08-10T19:45:00Z | 2026-08-10T19:46:00Z | 60 | verified |
+| run-20260810T194000Z | Stage 2 | 2.2 | 1 | 2026-08-10T19:46:00Z | 2026-08-10T19:47:00Z | 60 | verified |
+| run-20260810T194000Z | Stage 2 | 2.3 | 1 | 2026-08-10T19:47:00Z | 2026-08-10T19:48:00Z | 60 | verified |
+| run-20260810T194000Z | Stage 3 | 3.1 | 1 | 2026-08-10T19:48:00Z | 2026-08-10T19:48:30Z | 30 | verified |
+| run-20260810T194000Z | Stage 3 | 3.2 | 1 | 2026-08-10T19:48:30Z | 2026-08-10T19:49:00Z | 30 | verified |
+| run-20260810T194000Z | Stage 3 | 3.3 | 1 | 2026-08-10T19:49:00Z | 2026-08-10T19:49:30Z | 30 | verified |
+| run-20260810T194000Z | Stage 4 | 4.1 | 1 | 2026-08-10T19:49:30Z | 2026-08-10T19:49:45Z | 15 | verified |
+| run-20260810T194000Z | Stage 4 | 4.2 | 1 | 2026-08-10T19:49:45Z | 2026-08-10T19:49:55Z | 10 | verified |
+| run-20260810T194000Z | Stage 4 | 4.3 | 1 | 2026-08-10T19:49:55Z | 2026-08-10T19:50:00Z | 5 | verified |
+| run-20260810T194000Z | Stage 4 | 4.4 | 1 | 2026-08-10T19:50:00Z | 2026-08-10T19:50:10Z | 10 | verified |
 
 ### Execution Gantt
 

@@ -1,6 +1,7 @@
 ---
 name: spec-steering
 description: Use when onboarding a codebase or capturing persistent project context for spec-driven development — creating or updating steering docs (product, tech stack, structure) under .specs/steering/, or when the user says "steering", "onboard this repo", or wants the agent to learn the project before building features.
+version: 1.0.0
 ---
 
 # Spec Steering

@@ -1,6 +1,7 @@
 ---
 name: spec-execute
 description: Use when implementing an approved 04_tasks.md in spec-driven development — run a risk-scaled preflight, execute required tasks by dependency stage, verify requirements, honor checkpoints, and preserve resumable evidence. Triggers on "implement the tasks", "execute the spec", "start building", or after 04_tasks.md is approved.
+version: 1.1.0
 ---
 
 # Spec Execute (Phase 5)

@@ -1,6 +1,7 @@
 ---
 name: spec-verification
 description: Use before marking a spec task complete, advancing a stage, reporting success, committing completion, or handing implemented work to integration.
+version: 1.0.0
 ---
 
 # Spec Verification

@@ -1,6 +1,7 @@
 ---
 name: dependency-security-audit
 description: Audit resolved third-party dependencies for known vulnerabilities, CISA KEV exploitation, affected versions, and available fixes. Use when adding or upgrading a library, changing a lockfile, preparing protected-main integration or release, investigating an OSV/GHSA/CVE record, or selecting a patched dependency version.
+version: 1.0.1
 ---
 
 # Dependency Security Audit

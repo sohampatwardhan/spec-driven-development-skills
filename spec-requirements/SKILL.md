@@ -1,6 +1,7 @@
 ---
 name: spec-requirements
 description: Use when writing or refining a feature's requirements for spec-driven development — capturing user stories with EARS acceptance criteria in 02_requirements.md (phase 2). Triggers on "write requirements", "EARS", "acceptance criteria", "user stories", or after discovery is approved.
+version: 1.0.0
 ---
 
 # Spec Requirements (Phase 2)

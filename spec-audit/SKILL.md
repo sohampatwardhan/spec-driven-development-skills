@@ -1,6 +1,7 @@
 ---
 name: spec-audit
 description: Optionally audit a spec-driven feature's requirements, design, and task artifacts with parallel review agents. Use when asked to audit, scrutinize, harden, pressure-test, or validate a spec plan, or when risk warrants an extra quality gate.
+version: 1.1.0
 ---
 
 # Spec Audit (Optional Phase 4.5)

@@ -1,6 +1,7 @@
 ---
 name: spec-discovery
 description: Use when starting a new spec-driven feature, changing product behavior, or choosing among materially different solution approaches before requirements are written.
+version: 1.0.0
 ---
 
 # Spec Discovery (Phase 1)

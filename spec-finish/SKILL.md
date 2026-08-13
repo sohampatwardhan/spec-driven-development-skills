@@ -1,6 +1,7 @@
 ---
 name: spec-finish
 description: Use after every required spec task and final review pass, when deciding how to integrate, preserve, or deliver the completed implementation.
+version: 1.0.0
 ---
 
 # Spec Finish (Phase 6)

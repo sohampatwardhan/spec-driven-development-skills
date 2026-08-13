@@ -1,6 +1,7 @@
 ---
 name: spec-tasks
 description: Use when breaking an approved design into an implementation plan for spec-driven development — a dependency-ordered checkbox task list with requirement traceability and checkpoints, in 04_tasks.md (phase 4). Triggers on "write tasks", "04_tasks.md", "break down the design", or after a design is approved.
+version: 1.1.0
 ---
 
 # Spec Tasks (Phase 4)

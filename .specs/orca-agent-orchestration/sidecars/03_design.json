@@ -2,7 +2,7 @@
   "schema_version": 1,
   "generated_from": {
     "file": "03_design.md",
-    "sha256": "c211247944a12396017c11290e10523fc4963aff394c5cf6de0e0d382d1a0902"
+    "sha256": "5426ee4aba6e85906fcc05fbbc164d565359c224f0d61e4f1b585675099b7429"
   },
   "architecture": {
     "components": [

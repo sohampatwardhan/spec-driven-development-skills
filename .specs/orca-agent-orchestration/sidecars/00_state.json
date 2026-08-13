@@ -8,7 +8,7 @@
   "gates": {
     "audit": {
       "evidence": "Self-hardened and verified (113 tests passed)",
-      "status": "approved"
+      "status": "passed"
     },
     "design": {
       "evidence": "Architecture, JSON schemas, Gantt generator, and quota inspector specified (2026-08-10)",
@@ -33,7 +33,7 @@
   },
   "generated_from": {
     "file": "00_state.md",
-    "sha256": "6f0de16cac525754db456eb38f6615211994684980785d621200f83b0540b53c"
+    "sha256": "2fd68f90762174b5ef7c0e37b9ba4e5a909a93da6797672d72e6ae8bda0e6556"
   },
   "schema_version": 1
 }

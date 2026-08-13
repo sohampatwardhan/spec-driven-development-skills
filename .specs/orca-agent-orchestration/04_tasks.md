@@ -76,7 +76,7 @@ flowchart TD
     - **Verification:** pytest spec-driven/tests/test_model_routing.py
     - **Estimated effort:** 15-30 minutes
     - **Risk:** low; backward-compatible yaml schema additions
-    - **Task category:** architecture_design
+    - **Task category:** code_analysis
     - **Delegation:** sequential subagent
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 10.1, 10.2_
 
@@ -124,7 +124,7 @@ flowchart TD
     - **Verification:** python3 spec-driven/scripts/spec-orca.py --help
     - **Estimated effort:** 30-45 minutes
     - **Risk:** medium; CLI subprocess interaction with orca binary
-    - **Task category:** core_logic
+    - **Task category:** heavy_reasoning
     - **Delegation:** parallel-safe
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 10.1, 10.2, 10.3_
 
@@ -139,7 +139,7 @@ flowchart TD
     - **Verification:** python3 spec-driven/scripts/render-gantt.py --help
     - **Estimated effort:** 20-35 minutes
     - **Risk:** low; deterministic text transformation and Mermaid formatting
-    - **Task category:** core_logic
+    - **Task category:** code_analysis
     - **Delegation:** parallel-safe
     - _Requirements: 6.1, 9.1, 9.2, 9.3_
 
@@ -154,7 +154,7 @@ flowchart TD
     - **Verification:** pytest spec-driven/tests/test_spec_check.py spec-driven/tests/test_sidecars.py
     - **Estimated effort:** 30-45 minutes
     - **Risk:** medium; core validation script modifications
-    - **Task category:** core_logic
+    - **Task category:** heavy_reasoning
     - **Delegation:** sequential subagent
     - _Requirements: 7.1, 7.2, 7.3, 7.5, 8.2, 8.3_
 
@@ -220,7 +220,7 @@ flowchart TD
     - **Verification:** pytest spec-driven/tests/test_sidecars.py
     - **Estimated effort:** 20-30 minutes
     - **Risk:** low; test suite expansion
-    - **Task category:** unit_test
+    - **Task category:** review
     - **Delegation:** parallel-safe
     - _Requirements: 7.1, 7.2, 7.3, 7.5, 8.1, 8.2, 8.3_
 
@@ -235,7 +235,7 @@ flowchart TD
     - **Verification:** pytest spec-driven/tests/test_spec_orca.py
     - **Estimated effort:** 25-35 minutes
     - **Risk:** low; new test suite
-    - **Task category:** unit_test
+    - **Task category:** review
     - **Delegation:** parallel-safe
     - _Requirements: 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 10.1, 10.2, 10.3_
 
@@ -250,7 +250,7 @@ flowchart TD
     - **Verification:** pytest spec-driven/tests/test_render_gantt.py
     - **Estimated effort:** 20-30 minutes
     - **Risk:** low; new test suite
-    - **Task category:** unit_test
+    - **Task category:** review
     - **Delegation:** parallel-safe
     - _Requirements: 9.1, 9.2, 9.3_
 
@@ -265,6 +265,6 @@ flowchart TD
     - **Verification:** python3 spec-driven/scripts/spec-check.py .specs/orca-agent-orchestration
     - **Estimated effort:** 15-20 minutes
     - **Risk:** low; final validation pass
-    - **Task category:** unit_test
+    - **Task category:** review
     - **Delegation:** sequential subagent
     - _Requirements: 6.1, 6.2, 6.3, 7.1, 7.2, 7.3, 8.1, 8.2, 9.1, 9.2, 9.3, 8.3_

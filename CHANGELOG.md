@@ -2,7 +2,23 @@
 
 All notable changes to the Spec-Driven Development Skills suite are documented in this file.
 
-## [Unreleased] - 2026-08-11
+## Versioning
+
+Each skill directory (`spec-discovery/`, `spec-driven/`, `dependency-security-audit/`, etc.) is
+versioned independently via a `version:` field in its `SKILL.md` frontmatter, following
+[Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`, where MAJOR is a breaking change
+to a skill's triggers/workflow, MINOR is a backward-compatible capability addition, and PATCH is a
+bug fix with no behavior change for existing users. There is no single version number for the
+suite as a whole — a release below lists exactly the skills it changed and their old → new
+version, and skills it doesn't mention are unchanged at their last-listed version.
+
+## [1.1.0] - 2026-08-12
+
+Orca multi-agent task orchestration, deterministic sidecar tooling, an execution status control
+plane, and provider safety profile enforcement.
+
+**Versions:** `spec-driven` 1.0.0 → 1.1.0 · `spec-execute` 1.0.0 → 1.1.0 · `spec-audit` 1.0.0 →
+1.1.0 · `spec-tasks` 1.0.0 → 1.1.0 · `dependency-security-audit` 1.0.0 → 1.0.1
 
 ### Added
 - **Orca Multi-Agent Task Orchestration**:
@@ -33,11 +49,18 @@ All notable changes to the Spec-Driven Development Skills suite are documented i
     render-validation. Supplements, never replaces, the required `04_tasks.md` flowchart.
 - **Budget & Quota Aware Routing**:
   - Integrated quota inspection and budget cooldown checks in `spec-orca.py` and `model-router.py` to dynamically down-tier lightweight tasks under credit constraints and defer execution if provider quotas are exhausted.
+- **Execution Status Control Plane**:
+  - Added `derive_task_status_projection()` to [`spec-driven/scripts/spec-check.py`](spec-driven/scripts/spec-check.py), deriving each task's one current lifecycle state (`blocked`/`ready`/`running`/`failed`/`done`) from the task list and attempt ledger rather than hand-authoring it separately, and exposing it as the new `task_status` field in [`05_execution.schema.json`](spec-driven/contracts/schemas/05_execution.schema.json).
+  - Added `execution_wave_errors()` to reject a parallel wave with overlapping file ownership across its tasks, and to block a wave from starting until the prior wave's checkpoint is recorded `verified` in the new `checkpoint_commits` field.
+  - Extended [`04_tasks.schema.json`](spec-driven/contracts/schemas/04_tasks.schema.json) with per-task `components`, per-wave `profile`/`owned_paths`/`reason`, and a task-level `safety_classification` field.
+- **Provider Safety Profile Enforcement**:
+  - Added a `provider_safety` block (`real_time_cyber_safeguards`, `defensive_use_verified`, `allowed_safety_classifications`) to [`spec-driven/contracts/agent_profiles.json`](spec-driven/contracts/agent_profiles.json) and its schema.
+  - Added `provider_compatibility_error()` to [`spec-driven/scripts/spec-orca.py`](spec-driven/scripts/spec-orca.py), raising a non-retryable dispatch error — never a prompt-rewriting workaround — when a task's declared `safety_classification` isn't in the target agent's allowed list, or when `dual_use` work is dispatched to an agent with real-time cyber safeguards but no verified defensive-use entitlement.
 - **Testing & Verification Suites**:
   - Added [`spec-driven/tests/test_spec_orca.py`](spec-driven/tests/test_spec_orca.py) (5 tests) for DAG mapping, dependency blocking, decision gates, and budget routing.
   - [`spec-driven/tests/test_render_gantt.py`](spec-driven/tests/test_render_gantt.py) now has 18 tests, covering Mermaid Gantt syntax, 0-second duration protection, outcome tags, 4-color flowchart standards, Task Board kanban grouping/omission/sanitization, flowchart↔kanban status agreement, and idempotent Task Board injection.
   - Extended [`spec-driven/tests/test_sidecars.py`](spec-driven/tests/test_sidecars.py) for schema validation and `sidecars/` subfolder emission.
-  - Full test suite passing at 133 passed, 3 skipped, 170 subtests passed.
+  - Full `spec-driven/tests/` suite passing at 140 passed, 3 skipped, 170 subtests passed.
 
 - **Bidirectional skill-sync check**: Added
   [`spec-driven/scripts/check-skill-sync.py`](spec-driven/scripts/check-skill-sync.py), which
@@ -87,3 +110,19 @@ All notable changes to the Spec-Driven Development Skills suite are documented i
   `--check-only` for validation without writing (e.g. a CI gate that must fail on a sidecar
   someone forgot to regenerate, rather than silently repairing it); pass `--emit-json` explicitly
   when a malformed-source build failure should be fatal instead of a warning.
+- Fixed `04_tasks.md` and `03_design.md` in the `orca-agent-orchestration` dogfood spec to use
+  the `task_categories` vocabulary (`quick_lookup`/`code_analysis`/`heavy_reasoning`/`review`)
+  `model-router.py` actually validates against, instead of an informal vocabulary
+  (`architecture_design`/`core_logic`/`unit_test`) that predates it. Regenerated its sidecars,
+  renamed its `run-orca-1` execution run ID to the `run-<timestamp>Z` format `spec-check.py`
+  enforces, and moved its Audit gate status from `approved` to the canonical `passed`.
+
+## [1.0.0] - 2026-08-09
+
+Initial release: the spec-driven development skill family for Claude Code / Agent Skills —
+`spec-steering`, `spec-discovery`, `spec-requirements`, `spec-design`, `spec-tasks`, `spec-audit`,
+`spec-execute`, `spec-debugging`, `spec-verification`, `spec-finish`, `spec-hooks`, and the
+`spec-driven` router skill, plus the standalone `dependency-security-audit` skill. Established
+the phase-gated `.specs/<slug>/` artifact layout (`00_state.md` through `05_execution.md`), EARS
+acceptance criteria, deterministic Mermaid diagram generation, and the `spec-family.yaml`
+model-routing contract.
