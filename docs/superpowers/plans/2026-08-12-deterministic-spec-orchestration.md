@@ -6,11 +6,14 @@
 
 **Architecture:** Keep `04_tasks.json` as immutable task-plan facts and make `05_execution.json` the authoritative event ledger plus generated task-status projection. Extend the existing sidecar validator, Orca bridge, and Mermaid renderer to consume those shared facts; generated Markdown is a compact projection with an input-digest manifest.
 
-**Tech Stack:** Python standard library, JSON Schema subset validation, Mermaid/ELK, Orca CLI, pytest.
+**Tech Stack:** Python standard library, JSON Schema subset validation, Mermaid/ELK, Orca CLI,
+PyYAML (existing model-router dependency), pytest (development-only test dependency).
 
 ## Global Constraints
 
 - No new runtime dependency.
+- Run tests through the project-local `.venv`; `pytest` is development-only, while `PyYAML` is
+  required by the existing model-router. Neither may be introduced as a hidden dependency.
 - A provider safety block is never bypassed by prompt rewriting or unapproved routing.
 - Next-wave dispatch requires a verified integration checkpoint and clean scoped commit.
 - Generated visual status must include text/icon and color.
@@ -32,11 +35,11 @@
 - Consumes: `04_tasks.json.tasks`, `05_execution.json.task_attempts`, execution gates.
 - Produces: `05_execution.json.task_status[]` and validated `concurrency.waves[]`.
 
-- [ ] **Step 1: Add failing schema and projection tests** for pending, running, failed, done, and blocked task IDs plus invalid status transitions.
-- [ ] **Step 2: Extend the schemas** with `task_status`, `checkpoint_commits`, task ownership/components, wave dispatch profile, and provider constraints.
-- [ ] **Step 3: Implement pure projection functions** in `spec-check.py` that derive current status and waves from parsed payloads without reparsing files.
-- [ ] **Step 4: Validate ownership collisions, blocked dependencies, and an attempted next wave without a verified checkpoint.**
-- [ ] **Step 5: Run** `python3 -m pytest spec-driven/tests/test_sidecars.py spec-driven/tests/test_spec_check.py`.
+- [x] **Step 1: Add failing schema and projection tests** for pending, running, failed, done, and blocked task IDs plus invalid status transitions.
+- [x] **Step 2: Extend the schemas** with `task_status`, `checkpoint_commits`, task ownership/components, wave dispatch profile, and provider constraints.
+- [x] **Step 3: Implement pure projection functions** in `spec-check.py` that derive current status and waves from parsed payloads without reparsing files.
+- [x] **Step 4: Validate ownership collisions, blocked dependencies, and an attempted next wave without a verified checkpoint.**
+- [x] **Step 5: Run** `python3 -m pytest spec-driven/tests/test_sidecars.py spec-driven/tests/test_spec_check.py`.
 - [ ] **Step 6: Commit** schema and validator changes.
 
 ### Task 2: Provider-aware Orca scheduling and autonomous checkpoints
@@ -141,4 +144,3 @@
 - [ ] **Step 4: Run** `python3 -m pytest spec-driven/tests/`.
 - [ ] **Step 5: Verify acceptance:** every visual matches its source, status/waves agree, and an unverified checkpoint cannot advance execution.
 - [ ] **Step 6: Commit** migration and verification evidence.
-

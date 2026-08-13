@@ -48,6 +48,33 @@
         }
       }
     },
+    "task_status": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["task_id", "state", "blockers"],
+        "properties": {
+          "task_id": { "type": "string" },
+          "state": { "type": "string", "enum": ["blocked", "ready", "running", "failed", "done"] },
+          "attempt": { "type": ["integer", "null"] },
+          "updated_utc": { "type": ["string", "null"] },
+          "blockers": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "checkpoint_commits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["wave", "commit", "verified"],
+        "properties": {
+          "wave": { "type": "integer" },
+          "commit": { "type": "string" },
+          "verified": { "type": "boolean" },
+          "evidence": { "type": "string" }
+        }
+      }
+    },
     "gantt": {
       "type": "object",
       "required": ["diagram", "target", "sections"],

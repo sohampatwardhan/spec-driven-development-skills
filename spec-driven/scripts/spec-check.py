@@ -1827,6 +1827,93 @@ def build_task_waves(view: dict[str, object]) -> list[dict[str, object]]:
     return waves
 
 
+def derive_task_status_projection(
+    tasks: list[dict[str, object]], attempts: list[dict[str, object]]
+) -> list[dict[str, object]]:
+    """Return the one current lifecycle state for every planned task.
+
+    Task attempts are the ledger; this projection is deliberately derived rather than separately
+    authored.  A checked task or latest verified attempt is done, an active attempt is running,
+    and a failed latest attempt remains failed.  Remaining tasks are ready only when every
+    dependency is done, otherwise they are blocked.
+    """
+    latest: dict[str, dict[str, object]] = {}
+    for attempt in attempts:
+        task_id = str(attempt.get("task", ""))
+        if not task_id:
+            continue
+        previous = latest.get(task_id)
+        if previous is None or int(attempt.get("attempt", 0)) >= int(previous.get("attempt", 0)):
+            latest[task_id] = attempt
+
+    states: dict[str, str] = {
+        str(task["id"]): "done" if bool(task.get("checked")) else "pending" for task in tasks
+    }
+    for task_id, attempt in latest.items():
+        outcome = str(attempt.get("outcome", "")).casefold()
+        if outcome in {"verified", "complete", "completed", "done"}:
+            states[task_id] = "done"
+        elif outcome in {"active", "running", "in_progress"}:
+            states[task_id] = "running"
+        elif outcome in {"failed", "error"}:
+            states[task_id] = "failed"
+
+    result: list[dict[str, object]] = []
+    for task in tasks:
+        task_id = str(task["id"])
+        blockers = [
+            str(dependency)
+            for dependency in task.get("depends_on", [])
+            if states.get(str(dependency)) != "done"
+        ]
+        state = states[task_id]
+        if state == "pending":
+            state = "blocked" if blockers else "ready"
+        attempt = latest.get(task_id)
+        result.append(
+            {
+                "task_id": task_id,
+                "state": state,
+                "attempt": attempt.get("attempt") if attempt else None,
+                "updated_utc": attempt.get("started_utc") if attempt else None,
+                "blockers": blockers if state == "blocked" else [],
+            }
+        )
+    return result
+
+
+def execution_wave_errors(
+    tasks: list[dict[str, object]],
+    waves: list[dict[str, object]],
+    checkpoints: list[dict[str, object]],
+) -> list[str]:
+    """Reject parallel ownership collisions and advancing past an unverified wave checkpoint."""
+    by_id = {str(task["id"]): task for task in tasks}
+    verified = {
+        int(checkpoint["wave"])
+        for checkpoint in checkpoints
+        if checkpoint.get("verified") is True and isinstance(checkpoint.get("wave"), int)
+    }
+    errors: list[str] = []
+    for wave in waves:
+        number = int(wave["wave"])
+        if number > 1 and number - 1 not in verified:
+            errors.append(f"wave {number} cannot start without a verified checkpoint for wave {number - 1}")
+        if wave.get("mode") != "parallel":
+            continue
+        owners: dict[str, list[str]] = {}
+        for task_id in wave.get("tasks", []):
+            task = by_id.get(str(task_id), {})
+            for path in task.get("files", []):
+                owners.setdefault(str(path), []).append(str(task_id))
+        for path, task_ids in sorted(owners.items()):
+            if len(task_ids) > 1:
+                errors.append(
+                    f"parallel wave {number} has overlapping ownership: {path} ({', '.join(task_ids)})"
+                )
+    return errors
+
+
 # --- JSON sidecars (generated, hash-verified; see references/artifacts.md) ---------------------
 #
 # `00_state.json`, `04_tasks.json`, and `05_execution.json` are pure derived artifacts of

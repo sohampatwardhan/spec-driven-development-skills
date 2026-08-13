@@ -33,6 +33,7 @@
           "stage": { "type": ["integer", "null"] },
           "depends_on": { "type": "array", "items": { "type": "string" } },
           "files": { "type": "array", "items": { "type": "string" } },
+          "components": { "type": "array", "items": { "type": "string" } },
           "delegation": { "type": "string", "enum": ["controller", "sequential subagent", "parallel-safe"] },
           "dependency_resolution": { "type": "string" },
           "dependency_delivery": { "type": "string" },
@@ -49,6 +50,7 @@
             "properties": {
               "worktree_mode": { "type": "string", "enum": ["new-child", "current", "none"] },
               "agent": { "type": "string" },
+              "safety_classification": { "type": "string", "enum": ["none", "defensive", "dual_use"] },
               "unattended_flags": { "type": "array", "items": { "type": "string" } }
             }
           }
@@ -72,7 +74,10 @@
             "properties": {
               "wave": { "type": "integer" },
               "mode": { "type": "string", "enum": ["parallel", "serial"] },
-              "tasks": { "type": "array", "items": { "type": "string" } }
+              "tasks": { "type": "array", "items": { "type": "string" } },
+              "profile": { "type": "string" },
+              "owned_paths": { "type": "array", "items": { "type": "string" } },
+              "reason": { "type": "string" }
             }
           }
         }

@@ -435,6 +435,44 @@ class ExecutionSidecarGenerationTests(unittest.TestCase):
         )
 
 
+class TaskStatusProjectionTests(unittest.TestCase):
+    """Current status is a deterministic view of task facts and execution attempts."""
+
+    def test_projection_distinguishes_ready_running_failed_done_and_blocked(self) -> None:
+        tasks = [
+            {"id": "1.1", "checked": False, "depends_on": []},
+            {"id": "1.2", "checked": False, "depends_on": []},
+            {"id": "1.3", "checked": False, "depends_on": []},
+            {"id": "1.4", "checked": True, "depends_on": []},
+            {"id": "2.1", "checked": False, "depends_on": ["1.3"]},
+        ]
+        attempts = [
+            {"task": "1.2", "attempt": 1, "outcome": "active", "started_utc": "2026-08-12T12:00:00Z"},
+            {"task": "1.3", "attempt": 1, "outcome": "failed", "started_utc": "2026-08-12T12:01:00Z"},
+        ]
+        projected = spec_check.derive_task_status_projection(tasks, attempts)
+        by_id = {row["task_id"]: row for row in projected}
+        self.assertEqual("ready", by_id["1.1"]["state"])
+        self.assertEqual("running", by_id["1.2"]["state"])
+        self.assertEqual("failed", by_id["1.3"]["state"])
+        self.assertEqual("done", by_id["1.4"]["state"])
+        self.assertEqual("blocked", by_id["2.1"]["state"])
+        self.assertEqual(["1.3"], by_id["2.1"]["blockers"])
+
+    def test_wave_validation_rejects_shared_paths_and_missing_prior_checkpoint(self) -> None:
+        tasks = [
+            {"id": "1.1", "files": ["src/shared.py"]},
+            {"id": "1.2", "files": ["src/shared.py"]},
+        ]
+        errors = spec_check.execution_wave_errors(
+            tasks,
+            [{"wave": 1, "mode": "parallel", "tasks": ["1.1", "1.2"]}, {"wave": 2, "mode": "serial", "tasks": ["1.1"]}],
+            [],
+        )
+        self.assertIn("parallel wave 1 has overlapping ownership: src/shared.py (1.1, 1.2)", errors)
+        self.assertIn("wave 2 cannot start without a verified checkpoint for wave 1", errors)
+
+
 class SidecarFreshnessTests(unittest.TestCase):
     """`sidecar_freshness_errors` and the `--ready` gate reject a stale or orphaned sidecar."""
 
@@ -628,4 +666,3 @@ class SidecarFreshnessTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-
