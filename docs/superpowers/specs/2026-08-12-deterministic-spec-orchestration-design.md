@@ -89,6 +89,22 @@ region from its source, while live execution updates do not falsely stale the st
 - Preserve existing in-process model-routing resolution and extend that approach to all repeated
   pure computations.
 
+## Skill Publication and Updates
+
+Every skill package has a small publication manifest containing its name, semantic version,
+distribution channel, source URL, artifact digest, minimum compatible runtime, and release notes.
+At invocation, the runtime performs a lightweight manifest check before loading the workflow. If a
+newer compatible release exists, it downloads into a temporary location, verifies the declared
+digest and compatibility, acquires an update lock, and atomically replaces the installed package.
+The invocation then runs the newly verified version.
+
+An unavailable registry, network failure, invalid manifest, digest mismatch, or locked concurrent
+update never blocks normal work: the runtime continues with the known installed version and emits
+a concise update diagnostic. An incompatible major release or any migration that would change
+local configuration is an exception gate and requires explicit approval. Update checks must never
+execute unverified package code or overwrite a locally modified skill; local modifications are
+reported and preserved for a deliberate merge or reinstall.
+
 ## Validation and Measurement
 
 Validation rejects schema violations, dangling cross-artifact citations, stale generated regions,
@@ -103,7 +119,7 @@ dispatch without a verified checkpoint, and no generated visual that disagrees w
 ## Rollout
 
 Land the control plane first: schemas, canonical status projection, wave scheduling, checkpoints,
-and validation. Then migrate renderers and compact Markdown templates. Finally migrate the Orca
-example spec and run an end-to-end throwaway spec through discovery, planning, execution, and
-audit.
-
+and validation. Then migrate renderers and compact Markdown templates. Add the publication
+manifest and safe invocation-time update path before distributing the revised skill. Finally
+migrate the Orca example spec and run an end-to-end throwaway spec through discovery, planning,
+execution, and audit.
