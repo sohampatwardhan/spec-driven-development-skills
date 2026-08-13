@@ -126,8 +126,16 @@ def _walk_dicts(value: Any):
 
 
 def receipt_value(receipt: Any, *keys: str) -> str:
-    """Find the first non-empty string value for a known receipt key."""
-    mappings = list(_walk_dicts(receipt))
+    """Find the first non-empty string value for a known receipt key.
+
+    Every `orca ... --json` response is an envelope (`{id, ok, result, _meta}`)
+    whose own top-level `id` is a per-request UUID, not a resource id — walking
+    the raw envelope lets that UUID shadow the real nested `result.<resource>.id`
+    for any call site searching for a generic `"id"` key, so the envelope's
+    `result` (when present) is searched instead of the envelope itself.
+    """
+    body = receipt.get("result", receipt) if isinstance(receipt, dict) else receipt
+    mappings = list(_walk_dicts(body))
     for key in keys:
         for mapping in mappings:
             value = mapping.get(key)

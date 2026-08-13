@@ -476,7 +476,14 @@ def inject_flowchart_into_tasks_md(tasks_md_path: Path, diagram: str) -> None:
         return
 
     content = tasks_md_path.read_text(encoding="utf-8")
-    pattern = r"(?ms)^##\s+Stage and Dependency Overview\s*\n\s*```mermaid\s*\nflowchart\b.*?```\s*"
+    # The optional `%%{init: ...}%%` group tolerates the ELK-layout directive
+    # `build_flowchart_from_tasks_data` inserts right after the ```mermaid fence — without it,
+    # this pattern never matches an existing generated block (0 matches), and every run appends
+    # a fresh duplicate instead of replacing the one already there.
+    pattern = (
+        r"(?ms)^##\s+Stage and Dependency Overview\s*\n\s*```mermaid\s*\n"
+        r"(?:%%\{.*?\}%%\s*\n)?\s*flowchart\b.*?```\s*"
+    )
     # Remove every generated copy first. Replacing each match would preserve the duplicate count.
     cleaned = re.sub(pattern, "", content)
     cleaned = re.sub(r"\n{3,}", "\n\n", cleaned).strip() + "\n"
