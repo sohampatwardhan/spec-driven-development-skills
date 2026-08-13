@@ -23,7 +23,7 @@ PyYAML (existing model-router dependency), pytest (development-only test depende
 
 ### Task 1: Execution schema and deterministic status projection
 
-- [ ] **Task status:** Complete and reviewed
+- [x] **Task status:** Complete and reviewed
 
 **Files:**
 - Modify: `spec-driven/contracts/schemas/04_tasks.schema.json`
@@ -40,7 +40,7 @@ PyYAML (existing model-router dependency), pytest (development-only test depende
 - [x] **Step 3: Implement pure projection functions** in `spec-check.py` that derive current status and waves from parsed payloads without reparsing files.
 - [x] **Step 4: Validate ownership collisions, blocked dependencies, and an attempted next wave without a verified checkpoint.**
 - [x] **Step 5: Run** `python3 -m pytest spec-driven/tests/test_sidecars.py spec-driven/tests/test_spec_check.py`.
-- [ ] **Step 6: Commit** schema and validator changes.
+- [x] **Step 6: Commit** schema and validator changes.
 
 ### Task 2: Provider-aware Orca scheduling and autonomous checkpoints
 
