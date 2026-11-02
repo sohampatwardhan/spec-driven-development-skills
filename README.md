@@ -1,5 +1,8 @@
 # Spec-Driven Development Skills
 
+> [!WARNING]
+> **Deprecated.** This repository is no longer maintained. Use [kiro-sdd-skills](https://github.com/sohampatwardhan/kiro-sdd-skills) instead.
+
 A rigorous, [Agent Skills](https://agentskills.io/specification)-compatible spec-driven
 workflow — Kiro-style discovery → requirements → design → tasks, gated by explicit approval,
 then implemented task-by-task with verification and a deterministic evidence trail. Built for
