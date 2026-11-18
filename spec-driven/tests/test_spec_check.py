@@ -81,10 +81,10 @@ RESOLUTION_LINKS = ", ".join(
 SECURE_DETAILS = f"""
 Context: the selected dependency API and remediation evidence are recorded for human review.
 - **Context7 evidence:** state=pending | identity=/org/library | version=1.2.3 | decision=use documented API
-- **Pre-change dependency audit:** state=pending | command=dependency-security-audit change | expected_json=.security/dependency-audit/pre.json | expected_markdown=.security/dependency-audit/pre.md | review=pending
+- **Pre-change dependency audit:** state=pending | command=security-audit-skill change | expected_json=.security/dependency-audit/pre.json | expected_markdown=.security/dependency-audit/pre.md | review=pending
 - **Resolution edit:** state=pending | expected_files=package.json, package-lock.json, pnpm-lock.yaml, yarn.lock, bun.lock, bun.lockb, pyproject.toml, uv.lock, requirements-dev.in, requirements-dev.txt, requirements-dev.lock, packages/app/package.json, packages/excluded/package.json, Cargo.lock, crates/app/Cargo.toml, crates/excluded/Cargo.toml
 - **Project tests:** state=pending | expected_evidence=test-results.txt
-- **Post-change dependency audit:** state=pending | command=dependency-security-audit change | expected_json=.security/dependency-audit/post.json | expected_markdown=.security/dependency-audit/post.md | review=pending
+- **Post-change dependency audit:** state=pending | command=security-audit-skill change | expected_json=.security/dependency-audit/post.json | expected_markdown=.security/dependency-audit/post.md | review=pending
 """
 
 GATE_DETAILS = """
@@ -1049,7 +1049,7 @@ gantt
                 "Made a sustained documented engineering effort to run relevant project tests",
             ),
             "implicit post audit": SECURE_DETAILS.replace(
-                "post-change dependency-security-audit", "post-change audit"
+                "post-change security-audit-skill", "post-change audit"
             ),
             "negated post audit": SECURE_DETAILS.replace(
                 "Run a fresh post-change", "Do not run a fresh post-change"
@@ -1192,7 +1192,7 @@ gantt
             "Context7 version": ("version=1.2.3", "version=latest"),
             "Context7 decision": ("decision=use documented API", "decision="),
             "pre status": ("**Pre-change dependency audit:** state=pending", "**Pre-change dependency audit:** state=attempted"),
-            "pre command": ("command=dependency-security-audit change", "command=generic audit"),
+            "pre command": ("command=security-audit-skill change", "command=generic audit"),
             "pre JSON": ("expected_json=.security/dependency-audit/pre.json", "expected_json=../pre.json"),
             "pre review": ("expected_markdown=.security/dependency-audit/pre.md | review=pending", "expected_markdown=.security/dependency-audit/pre.md | review=attempted"),
             "edit status": ("**Resolution edit:** state=pending", "**Resolution edit:** state=attempted"),
@@ -1200,7 +1200,7 @@ gantt
             "tests status": ("**Project tests:** state=pending", "**Project tests:** state=failed"),
             "tests evidence": ("expected_evidence=test-results.txt", "expected_evidence=../results.txt"),
             "post status": ("**Post-change dependency audit:** state=pending", "**Post-change dependency audit:** state=attempted"),
-            "post command": ("**Post-change dependency audit:** state=pending | command=dependency-security-audit change", "**Post-change dependency audit:** state=pending | command=dependency-security-audit main"),
+            "post command": ("**Post-change dependency audit:** state=pending | command=security-audit-skill change", "**Post-change dependency audit:** state=pending | command=security-audit-skill main"),
             "post review": ("expected_markdown=.security/dependency-audit/post.md | review=pending", "expected_markdown=.security/dependency-audit/post.md | review=failed"),
             "same reports": ("expected_json=.security/dependency-audit/post.json", "expected_json=.security/dependency-audit/pre.json"),
         }
@@ -1445,10 +1445,10 @@ gantt
                 ), encoding="utf-8")
             completed = f"""
 - **Context7 evidence:** state=completed | identity=/org/library | version=1.2.3 | decision=use documented API
-- **Pre-change dependency audit:** state=completed | command=dependency-security-audit change | mode=change | timestamp={pre_timestamp} | project_revision={revision} | inventory_fingerprint={pre_fingerprint} | JSON=[pre.json](../../.security/dependency-audit/pre.json) | Markdown=[pre.md](../../.security/dependency-audit/pre.md) | review=completed | result=pass | exit=0 | decision=proceed | warnings_reviewed=false | clean=true
+- **Pre-change dependency audit:** state=completed | command=security-audit-skill change | mode=change | timestamp={pre_timestamp} | project_revision={revision} | inventory_fingerprint={pre_fingerprint} | JSON=[pre.json](../../.security/dependency-audit/pre.json) | Markdown=[pre.md](../../.security/dependency-audit/pre.md) | review=completed | result=pass | exit=0 | decision=proceed | warnings_reviewed=false | clean=true
 - **Resolution edit:** state=completed | files=[package.json](../../package.json), [package-lock.json](../../package-lock.json)
 - **Project tests:** state=completed | evidence=[test results](../../test-results.txt)
-- **Post-change dependency audit:** state=completed | command=dependency-security-audit change | mode=change | timestamp={post_timestamp} | project_revision={revision} | inventory_fingerprint={post_fingerprint} | JSON=[post.json](../../.security/dependency-audit/post.json) | Markdown=[post.md](../../.security/dependency-audit/post.md) | review=completed | result=pass | exit=0 | decision=merge | warnings_reviewed=false | clean=true
+- **Post-change dependency audit:** state=completed | command=security-audit-skill change | mode=change | timestamp={post_timestamp} | project_revision={revision} | inventory_fingerprint={post_fingerprint} | JSON=[post.json](../../.security/dependency-audit/post.json) | Markdown=[post.md](../../.security/dependency-audit/post.md) | review=completed | result=pass | exit=0 | decision=merge | warnings_reviewed=false | clean=true
 """
             checked_task = lambda details: task(
                 "package.json, package-lock.json", details, resolution="change", checked=True
@@ -1657,7 +1657,7 @@ gantt
         for path in phase_files:
             with self.subTest(path=path.name, parent=path.parent.name):
                 text = path.read_text(encoding="utf-8").casefold()
-                self.assertIn("dependency-security-audit", text, f"{path} lacks dependency-security-audit")
+                self.assertIn("security-audit-skill", text, f"{path} lacks security-audit-skill")
                 self.assertIn("change", text, f"{path} lacks change")
                 self.assertIn(
                     "dependency-evidence.md", text,

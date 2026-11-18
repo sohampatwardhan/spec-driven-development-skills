@@ -165,7 +165,7 @@ every interaction.
   library, framework, SDK, API, CLI, or cloud-service behavior, resolve and query its current
   official documentation before making an implementation decision. Record the version/source
   and the decision in the design; do not rely on model memory for those claims.
-- **Dependency Security Evidence via [`dependency-security-audit`](../dependency-security-audit/SKILL.md).** Keep the
+- **Dependency Security Evidence via [`security-audit-skill`](../security-audit-skill/SKILL.md).** Keep the
   design section nonempty and apply [dependency-evidence.md](references/dependency-evidence.md)
   when material dependencies apply; otherwise state a concise reason.
 - **Graph-assisted discovery for brownfield work.** When `codebase-memory-mcp` is available and

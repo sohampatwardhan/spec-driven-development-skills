@@ -22,7 +22,7 @@ requirement(s) it validates (`Validates: Requirements X.Y`). No requirement left
 [`spec-driven`](../spec-driven/SKILL.md) · [`spec-discovery`](../spec-discovery/SKILL.md) ·
 [`spec-requirements`](../spec-requirements/SKILL.md) · [`spec-tasks`](../spec-tasks/SKILL.md) ·
 [`mermaid`](../mermaid/SKILL.md) · [`context7-mcp`](../context7-mcp/SKILL.md) ·
-[`dependency-security-audit`](../dependency-security-audit/SKILL.md) ·
+[`security-audit-skill`](../security-audit-skill/SKILL.md) ·
 [`codebase-memory-reference`](../codebase-memory-reference/SKILL.md)
 
 **REQUIRED first:** read `00_state.md`, the feature's approved `01_discovery.md` and

@@ -1456,7 +1456,7 @@ def _change_sequence_error(
         if (
             set(audit) != (completed_keys if checked else pending_keys)
             or audit.get("state") != phase
-            or audit.get("command") != "dependency-security-audit change"
+            or audit.get("command") != "security-audit-skill change"
             or audit.get("review") != phase
             or checked and report_pair is None
             or not checked and _expected_report_pair(audit, project_root) is None

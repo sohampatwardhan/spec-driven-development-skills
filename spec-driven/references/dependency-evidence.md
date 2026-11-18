@@ -23,7 +23,7 @@ A `Dependency resolution: change` leaf owns every applicable exact manifest and 
 path, including the nearest applicable ancestor workspace lock. Preserve this order:
 
 1. Review Current Technology Evidence and query current documentation when needed.
-2. Run `dependency-security-audit` in `change` mode and review both linked reports.
+2. Run `security-audit-skill` in `change` mode and review both linked reports.
 3. Edit dependency resolution and run relevant project tests.
 4. Run a fresh post-change `change` audit and review both new linked reports.
 

@@ -38,7 +38,7 @@ validated Mermaid Gantt derived from those records.
 [`spec-verification`](../spec-verification/SKILL.md) · [`spec-finish`](../spec-finish/SKILL.md) ·
 [`plan-harden`](../plan-harden/SKILL.md) · [`code-documenting`](../code-documenting/SKILL.md) ·
 [`mermaid`](../mermaid/SKILL.md) · [`context7-mcp`](../context7-mcp/SKILL.md) ·
-[`dependency-security-audit`](../dependency-security-audit/SKILL.md) ·
+[`security-audit-skill`](../security-audit-skill/SKILL.md) ·
 [`codebase-memory-reference`](../codebase-memory-reference/SKILL.md)
 
 **REQUIRED first:** work from the project-local `.specs/<feature-slug>/`; read `00_state.md`,

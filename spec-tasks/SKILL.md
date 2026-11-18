@@ -22,7 +22,7 @@ together the tasks cover every requirement criterion.
 [`spec-driven`](../spec-driven/SKILL.md) · [`spec-design`](../spec-design/SKILL.md) ·
 [`spec-execute`](../spec-execute/SKILL.md) · [`mermaid`](../mermaid/SKILL.md) ·
 [`context7-mcp`](../context7-mcp/SKILL.md) ·
-[`dependency-security-audit`](../dependency-security-audit/SKILL.md) ·
+[`security-audit-skill`](../security-audit-skill/SKILL.md) ·
 [`code-documenting`](../code-documenting/SKILL.md) ·
 [`codebase-memory-reference`](../codebase-memory-reference/SKILL.md)
 

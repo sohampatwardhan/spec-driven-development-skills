@@ -16,7 +16,7 @@ do not rewrite approved artifacts unless the user asks to apply a finding.
 [`spec-requirements`](../spec-requirements/SKILL.md) · [`spec-design`](../spec-design/SKILL.md) ·
 [`spec-tasks`](../spec-tasks/SKILL.md) · [`spec-execute`](../spec-execute/SKILL.md) ·
 [`mermaid`](../mermaid/SKILL.md) · [`context7-mcp`](../context7-mcp/SKILL.md) ·
-[`dependency-security-audit`](../dependency-security-audit/SKILL.md) ·
+[`security-audit-skill`](../security-audit-skill/SKILL.md) ·
 [`codebase-memory-reference`](../codebase-memory-reference/SKILL.md)
 
 > [!WARNING]
@@ -116,7 +116,7 @@ evidence.
    - **Technical/factual:** current repository facts, design feasibility,
      source-of-truth alignment, documentation links, Mermaid renderability, and applicable
      cross-cutting risk gates (security, privacy, accessibility, performance, observability,
-     migration, rollout, rollback). Separately verify `dependency-security-audit` mode, report,
+     migration, rollout, rollback). Separately verify `security-audit-skill` mode, report,
      freshness, and `pass`/`warnings`/`blocked`/`unavailable`/`invalid` semantics. Perform the
      JSON-sidecar freshness and structured-field spot-check from step 3 as part of this lens when
      it has not already been resolved.

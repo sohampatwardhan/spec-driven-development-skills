@@ -441,7 +441,7 @@ reviewed `warnings` use exit `0`; `blocked`, `unavailable`, and `invalid` use ex
 and `blocked`, `unavailable`, or `invalid` cannot ship.
 ```
 
-Use the focused `dependency-security-audit` skill for this evidence. It supplements, and never
+Use the focused `security-audit-skill` skill for this evidence. It supplements, and never
 replaces, the design's broad security and authorization risk analysis. A dependency-changing task
 must own every applicable manifest and lock/resolution file—including existing `uv.lock` with
 `pyproject.toml`, Bun locks with `package.json`, and shared-stem `requirements*.in/.txt/.lock`—and
@@ -450,7 +450,7 @@ member. It must
 require Current Technology Evidence/Context7, a pre-change `change` audit followed by review of Markdown-linked JSON and
 Markdown reports, the resolution edit, relevant project tests, a fresh post-change audit, and a
 second review of both linked reports. The post-change invocation must explicitly run
-`dependency-security-audit` in `change` mode; a generic audit reference is insufficient.
+`security-audit-skill` in `change` mode; a generic audit reference is insufficient.
 Each pre/post audit record contains both clickable report fields and the exact
 `review=completed` field. Narrative wording remains useful context but cannot replace any canonical
 record, field, link, status, or freshness value.
@@ -577,7 +577,7 @@ observability, data migration, rollout, and rollback. State why a gate is not ap
 <Current Context7 decisions for evolving technologies, or a concise not-applicable statement.>
 
 ## Dependency Security Evidence
-<Material resolved dependencies, `dependency-security-audit` mode, linked JSON/Markdown reports,
+<Material resolved dependencies, `security-audit-skill` mode, linked JSON/Markdown reports,
 result semantics, and main/release gates; or a concise not-applicable statement.>
 ```
 
@@ -618,10 +618,10 @@ or undeclared ordering beyond what the sidecar declares. Omit this section for a
     - **Dependency resolution:** none / change
     - **Dependency delivery:** none / main / release
     - **Context7 evidence:** state=pending | identity=/org/library | version=1.2.3 | decision=<selected API decision>
-    - **Pre-change dependency audit:** state=pending | command=dependency-security-audit change | expected_json=.security/dependency-audit/pre-change.json | expected_markdown=.security/dependency-audit/pre-change.md | review=pending
+    - **Pre-change dependency audit:** state=pending | command=security-audit-skill change | expected_json=.security/dependency-audit/pre-change.json | expected_markdown=.security/dependency-audit/pre-change.md | review=pending
     - **Resolution edit:** state=pending | expected_files=path/to/manifest, path/to/lock
     - **Project tests:** state=pending | expected_evidence=path/to/test-evidence
-    - **Post-change dependency audit:** state=pending | command=dependency-security-audit change | expected_json=.security/dependency-audit/post-change.json | expected_markdown=.security/dependency-audit/post-change.md | review=pending
+    - **Post-change dependency audit:** state=pending | command=security-audit-skill change | expected_json=.security/dependency-audit/post-change.json | expected_markdown=.security/dependency-audit/post-change.md | review=pending
     - **Depends on:** none
     - **Stage:** 1
     - **Interfaces:** Consumes: `<exact input, prior task output, or approved design contract>`; Produces: `<exact artifact, symbol, signature, schema, or observable behavior>`

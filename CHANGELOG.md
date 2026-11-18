@@ -4,13 +4,27 @@ All notable changes to the Spec-Driven Development Skills suite are documented i
 
 ## Versioning
 
-Each skill directory (`spec-discovery/`, `spec-driven/`, `dependency-security-audit/`, etc.) is
+Each skill directory (`spec-discovery/`, `spec-driven/`, etc.) is
 versioned independently via a `version:` field in its `SKILL.md` frontmatter, following
 [Semantic Versioning](https://semver.org/): `MAJOR.MINOR.PATCH`, where MAJOR is a breaking change
 to a skill's triggers/workflow, MINOR is a backward-compatible capability addition, and PATCH is a
 bug fix with no behavior change for existing users. There is no single version number for the
 suite as a whole — a release below lists exactly the skills it changed and their old → new
 version, and skills it doesn't mention are unchanged at their last-listed version.
+
+## [Unreleased]
+
+### Removed
+- **`dependency-security-audit`** moved to its own repository,
+  [`security-audit-skill`](https://github.com/sohampatwardhan/security-audit-skill), with its git
+  history preserved. This family no longer ships it.
+
+### Changed
+- References to the skill in `spec-driven`, `spec-design`, `spec-tasks`, `spec-execute`,
+  `spec-audit`, and `spec-check.py` now use the new name `security-audit-skill`. **Breaking:** the
+  validated audit command string changed from `dependency-security-audit change` to
+  `security-audit-skill change`, so existing specs that record the old string need updating.
+  Report paths (`.security/dependency-audit/`) are unchanged.
 
 ## [1.1.1] - 2026-08-13
 
