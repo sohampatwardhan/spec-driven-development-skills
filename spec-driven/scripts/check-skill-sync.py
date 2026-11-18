@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Diff the installed spec-driven skill family against the latest GitHub main.
 
-Skills in this family (`spec-*`, `dependency-security-audit`) are mirrored between
+Skills in this family (`spec-*`) are mirrored between
 a local installation directory and https://github.com/sohampatwardhan/spec-driven-development-skills.
 Drift can go either direction: local can lag a pushed improvement, or local can carry
 a fix never pushed upstream. This script reports both, without assuming either side
